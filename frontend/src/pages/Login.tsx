@@ -134,12 +134,12 @@ const Login: React.FC = () => {
       return;
     }
     
-    setGoogleLoading(true);
+    setLoading(true);
     try {
       const result = await authAPI.googleLogin({ credential: response.credential });
       handleGoogleResponse(result);
     } catch (error: any) {
-      setGoogleLoading(false);
+      setLoading(false);
       toast.error(error.response?.data?.message || 'Google login failed');
       console.error(error);
     }
@@ -177,7 +177,7 @@ const Login: React.FC = () => {
   };
 
   const handleGoogleResponse = (result: any) => {
-    setGoogleLoading(false);
+    setLoading(false);
     // Check if user needs to complete registration
     if (result.data.needsRegistration) {
       setGoogleUser(result.data);

@@ -159,7 +159,7 @@ const Register: React.FC = () => {
       return;
     }
     
-    setGoogleLoading(true);
+    setLoading(true);
     try {
       const result = await authAPI.googleLogin({ credential: response.credential });
       
@@ -189,7 +189,7 @@ const Register: React.FC = () => {
       toast.error(error.response?.data?.message || 'Google sign-in failed');
       console.error(error);
     } finally {
-      setGoogleLoading(false);
+      setLoading(false);
     }
   };
 
