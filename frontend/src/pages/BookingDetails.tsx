@@ -956,7 +956,40 @@ const BookingDetails: React.FC = () => {
                 </Form.Text>
                 <Form.Control
                   type="file"
-                  accept="image}
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = (e.target as HTMLInputElement).files;
+                    if (files && files.length > 0) {
+                      // Handle file uploads here if needed
+                      // For now, this is just a placeholder
+                    }
+                  }}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Special Instructions</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={editForm.specialInstructions}
+                  onChange={(e) => setEditForm(prev => ({
+                    ...prev,
+                    specialInstructions: e.target.value
+                  }))}
+                />
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" type="submit" disabled={editing}>
+                {editing ? 'Updating...' : 'Update Booking'}
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
         <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Rate Your Delivery Experience</Modal.Title>
