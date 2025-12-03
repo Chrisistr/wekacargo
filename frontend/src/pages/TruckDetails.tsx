@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Carousel, Alert } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -13,13 +13,7 @@ const TruckDetails: React.FC = () => {
   const [truck, setTruck] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchTruck(id);
-    }
-  }, [id]);
-
-  const fetchTruck = async (truckId: string) => {
+  const fetchTruck = useCallback(async (truckId: string) => {
     try {
       const response = await trucksAPI.getById(truckId);
       setTruck(response.data);
@@ -29,7 +23,13 @@ const TruckDetails: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (id) {
+      fetchTruck(id);
+    }
+  }, [id, fetchTruck]);
 
   const handleBookTruck = () => {
     if (!isAuthenticated) {

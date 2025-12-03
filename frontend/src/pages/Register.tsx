@@ -49,7 +49,6 @@ const Register: React.FC = () => {
     address: ''
   });
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [googleUser, setGoogleUser] = useState<any>(null);
   const [registrationData, setRegistrationData] = useState({
