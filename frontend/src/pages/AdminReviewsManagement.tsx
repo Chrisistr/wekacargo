@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Form } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -12,18 +12,15 @@ const AdminReviewsManagement: React.FC = () => {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [reviewSearch, setReviewSearch] = useState('');
   const [reviewStatusFilter, setReviewStatusFilter] = useState<'all' | 'active' | 'deleted'>('all');
-  const [stats, setStats] = useState<any>({});
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
-      const response = await adminAPI.getAnalytics();
-      setStats(response.data);
+      await adminAPI.getAnalytics();
     } catch (error) {
       console.error('Failed to fetch analytics');
     }
-  };
+  }, []);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoadingReviews(true);
       const params: any = {};
@@ -40,7 +37,7 @@ const AdminReviewsManagement: React.FC = () => {
     } finally {
       setLoadingReviews(false);
     }
-  };
+  }, [reviewSearch, reviewStatusFilter]);
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
@@ -62,7 +59,7 @@ const AdminReviewsManagement: React.FC = () => {
       fetchReviews();
       fetchStats();
     }
-  }, [user, reviewSearch, reviewStatusFilter]);
+  }, [user, fetchReviews, fetchStats]);
 
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
@@ -180,6 +177,7 @@ const AdminReviewsManagement: React.FC = () => {
 };
 
 export default AdminReviewsManagement;
+
 
 
 

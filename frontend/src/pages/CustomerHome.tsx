@@ -93,9 +93,6 @@ const CustomerHome: React.FC = () => {
     ['confirmed', 'in-transit'].includes(b.status)
   ).length;
 
-  const pendingBookings = bookings.filter(b =>
-    ['pending', 'confirmed'].includes(b.status)
-  );
 
   // Filter only incomplete deliveries (pending, confirmed, in-transit)
   const incompleteBookings = bookings

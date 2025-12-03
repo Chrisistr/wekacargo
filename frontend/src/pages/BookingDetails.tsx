@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Alert, Modal, Form } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -30,43 +30,19 @@ const BookingDetails: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [updatingLocation, setUpdatingLocation] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    lat: '',
+    lng: '',
+    estimatedArrival: ''
+  });
   const [reviewForm, setReviewForm] = useState({
     rating: 0,
     review: ''
   });
 
-  useEffect(() => {
-    if (id) {
-      // Allow fetching even if user is still loading (will be checked on backend)
-      fetchBooking(id);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    // Check if user has reviewed and show review modal for completed bookings
-    if (booking && user && booking.status === 'completed' && user.role === 'customer') {
-      checkReviewStatus();
-    }
-  }, [booking, user]);
-
-  const checkReviewStatus = async () => {
-    if (!booking || !user) return;
-    try {
-      const response = await ratingsAPI.checkReview(booking._id);
-      setHasReviewed(response.data.hasReviewed);
-      // Show review modal if booking is completed and user hasn't reviewed yet
-      if (booking.status === 'completed' && !response.data.hasReviewed) {
-        // Show modal after a short delay to let user see the completion status
-        setTimeout(() => {
-          setShowReviewModal(true);
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Error checking review status:', error);
-    }
-  };
-
-  const fetchBooking = async (bookingId: string) => {
+  const fetchBooking = useCallback(async (bookingId: string) => {
     try {
       const response = await bookingsAPI.getById(bookingId);
       setBooking(response.data);
@@ -93,7 +69,37 @@ const BookingDetails: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  const checkReviewStatus = useCallback(async () => {
+    if (!booking || !user) return;
+    try {
+      const response = await ratingsAPI.checkReview(booking._id);
+      setHasReviewed(response.data.hasReviewed);
+      // Show review modal if booking is completed and user hasn't reviewed yet
+      if (booking.status === 'completed' && !response.data.hasReviewed) {
+        // Show modal after a short delay to let user see the completion status
+        setTimeout(() => {
+          setShowReviewModal(true);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error checking review status:', error);
+    }
+  }, [booking, user]);
+
+  useEffect(() => {
+    if (id) {
+      fetchBooking(id);
+    }
+  }, [id, fetchBooking]);
+
+  useEffect(() => {
+    if (booking && user && booking.status === 'completed' && user.role === 'customer') {
+      checkReviewStatus();
+    }
+  }, [booking, user, checkReviewStatus]);
+
 
   const handlePayment = async () => {
     if (!phoneNumber || phoneNumber.trim().length < 9) {
@@ -175,6 +181,36 @@ const BookingDetails: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to update status');
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleLocationUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!locationForm.lat || !locationForm.lng) {
+      toast.error('Please enter latitude and longitude');
+      return;
+    }
+
+    setUpdatingLocation(true);
+    try {
+      const updateData: any = {
+        lat: parseFloat(locationForm.lat),
+        lng: parseFloat(locationForm.lng)
+      };
+
+      if (locationForm.estimatedArrival) {
+        updateData.estimatedArrival = locationForm.estimatedArrival;
+      }
+
+      await bookingsAPI.updateTracking(booking._id, updateData);
+      toast.success('Location updated successfully! Customer has been notified.');
+      setShowLocationModal(false);
+      setLocationForm({ lat: '', lng: '', estimatedArrival: '' });
+      fetchBooking(booking._id);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update location');
+    } finally {
+      setUpdatingLocation(false);
     }
   };
 
@@ -578,13 +614,42 @@ const BookingDetails: React.FC = () => {
                         </Button>
                       )}
                       {booking.status === 'in-transit' && (
-                        <Button 
-                          variant="success" 
-                          onClick={() => handleStatusUpdate('completed')}
-                          disabled={updatingStatus}
-                        >
-                          Mark as Completed
-                        </Button>
+                        <>
+                          <Button 
+                            variant="info" 
+                            onClick={() => {
+                              // Get current location from browser if available
+                              if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                  (position) => {
+                                    setLocationForm({
+                                      lat: position.coords.latitude.toFixed(6),
+                                      lng: position.coords.longitude.toFixed(6),
+                                      estimatedArrival: ''
+                                    });
+                                    setShowLocationModal(true);
+                                  },
+                                  (error) => {
+                                    toast.error('Could not get your location. Please enter manually.');
+                                    setShowLocationModal(true);
+                                  }
+                                );
+                              } else {
+                                setShowLocationModal(true);
+                              }
+                            }}
+                            disabled={updatingLocation}
+                          >
+                            Update Location
+                          </Button>
+                          <Button 
+                            variant="success" 
+                            onClick={() => handleStatusUpdate('completed')}
+                            disabled={updatingStatus}
+                          >
+                            Mark as Completed
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -615,7 +680,7 @@ const BookingDetails: React.FC = () => {
                 </Card>
 
                 {/* Payment Action Section */}
-                {isCustomer && booking.payment.status !== 'paid' && booking.status === 'confirmed' && (
+                {isCustomer && booking.payment.status !== 'paid' && booking.payment.status !== 'completed' && (booking.status === 'confirmed' || booking.status === 'completed') && (
                   <Card className="mb-4" style={{ 
                     background: booking.payment?.method === 'cash' ? '#fff3cd' : '#fff3cd', 
                     border: '1px solid #ffc107' 
@@ -1156,6 +1221,76 @@ const BookingDetails: React.FC = () => {
               </Button>
               <Button variant="primary" type="submit" disabled={reviewForm.rating === 0 || submittingReview}>
                 {submittingReview ? 'Submitting...' : 'Submit Review'}
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+
+        {/* Location Update Modal (for truckers) */}
+        <Modal show={showLocationModal} onHide={() => {
+          if (!updatingLocation) {
+            setShowLocationModal(false);
+          }
+        }}>
+          <Modal.Header closeButton>
+            <Modal.Title>Update Delivery Location</Modal.Title>
+          </Modal.Header>
+          <Form onSubmit={handleLocationUpdate}>
+            <Modal.Body>
+              <Alert variant="info" className="mb-3">
+                <small>
+                  Update your current location so the customer can track the delivery in real-time.
+                  You can use your phone's GPS or enter coordinates manually.
+                </small>
+              </Alert>
+              <Form.Group className="mb-3">
+                <Form.Label>Latitude *</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="any"
+                  placeholder="e.g., -1.2921"
+                  value={locationForm.lat}
+                  onChange={(e) => setLocationForm(prev => ({ ...prev, lat: e.target.value }))}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Longitude *</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="any"
+                  placeholder="e.g., 36.8219"
+                  value={locationForm.lng}
+                  onChange={(e) => setLocationForm(prev => ({ ...prev, lng: e.target.value }))}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Estimated Arrival (Optional)</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  value={locationForm.estimatedArrival}
+                  onChange={(e) => setLocationForm(prev => ({ ...prev, estimatedArrival: e.target.value }))}
+                />
+                <Form.Text className="text-muted">
+                  When do you expect to arrive at the destination?
+                </Form.Text>
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowLocationModal(false)} 
+                disabled={updatingLocation}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                type="submit" 
+                disabled={updatingLocation || !locationForm.lat || !locationForm.lng}
+              >
+                {updatingLocation ? 'Updating...' : 'Update Location'}
               </Button>
             </Modal.Footer>
           </Form>

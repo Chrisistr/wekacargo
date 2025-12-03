@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -41,6 +41,7 @@ const CreateBooking: React.FC = () => {
   });
   const [estimatedPrice, setEstimatedPrice] = useState(0);
   const [distance, setDistance] = useState(0);
+  const geocodeTimeoutsRef = useRef<{ origin?: NodeJS.Timeout; destination?: NodeJS.Timeout }>({});
 
   useEffect(() => {
     if (!user) {
@@ -58,11 +59,21 @@ const CreateBooking: React.FC = () => {
     if (truckId) {
       fetchTruck();
     }
-  }, [truckId, user, navigate]);
 
-  const fetchTruck = async () => {
+  }, [truckId, user, navigate, fetchTruck]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (geocodeTimeoutsRef.current.origin) clearTimeout(geocodeTimeoutsRef.current.origin);
+      if (geocodeTimeoutsRef.current.destination) clearTimeout(geocodeTimeoutsRef.current.destination);
+    };
+  }, []);
+
+  const fetchTruck = useCallback(async () => {
+    if (!truckId) return;
     try {
-      const response = await trucksAPI.getById(truckId!);
+      const response = await trucksAPI.getById(truckId);
       setTruck(response.data);
     } catch (error: any) {
       console.error('Error fetching truck:', error);
@@ -74,7 +85,7 @@ const CreateBooking: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [truckId, navigate]);
 
   const calculateDistance = (coords1: { lat: number; lng: number }, coords2: { lat: number; lng: number }) => {
     const R = 6371; // Earth radius in km
@@ -89,62 +100,74 @@ const CreateBooking: React.FC = () => {
   };
 
   const handleAddressChange = async (field: 'origin' | 'destination', address: string) => {
+    // Update address immediately (don't wait for geocoding)
     setFormData(prev => ({
       ...prev,
       [field]: { ...prev[field], address }
     }));
 
-    // Use Google Maps Geocoding API via backend
-    if (address.length > 5) {
-      try {
-        const response = await bookingsAPI.geocode(address);
-        const { lat, lng, formattedAddress } = response.data;
-        const coords = { lat, lng };
-        
-        setFormData(prev => ({
-          ...prev,
-          [field]: { 
-            ...prev[field], 
-            coordinates: coords,
-            address: formattedAddress || address
-          }
-        }));
-
-        // Calculate distance and price if both addresses are set
-        const otherField = field === 'origin' ? 'destination' : 'origin';
-        const otherAddress = field === 'origin' ? formData.destination.address : formData.origin.address;
-        
-        if (otherAddress && otherAddress.length > 5) {
-          const otherCoords = field === 'origin' ? formData.destination.coordinates : formData.origin.coordinates;
-          if (otherCoords && otherCoords.lat !== 0 && otherCoords.lng !== 0) {
-            const dist = calculateDistance(
-              field === 'origin' ? coords : otherCoords,
-              field === 'origin' ? otherCoords : coords
-            );
-            setDistance(dist);
-            const price = truck ? Math.max(truck.rates.perKm * dist, truck.rates.minimumCharge) : 0;
-            setEstimatedPrice(price);
-          }
-        }
-      } catch (error: any) {
-        // Silently handle geocoding errors - don't show error to user
-        // Just use fallback coordinates
-        console.log('Geocoding not available, using fallback coordinates for:', address);
-        const baseCoords = { lat: -1.2921, lng: 36.8219 };
-        const hash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const coords = { 
-          lat: baseCoords.lat + (hash % 200) / 1000 - 0.1, 
-          lng: baseCoords.lng + (hash % 200) / 1000 - 0.1 
-        };
-        coords.lat = Math.max(-4.7, Math.min(5.5, coords.lat));
-        coords.lng = Math.max(33.9, Math.min(41.9, coords.lng));
-        
-        setFormData(prev => ({
-          ...prev,
-          [field]: { ...prev[field], coordinates: coords }
-        }));
-      }
+    // Clear existing timeout for this field
+    if (geocodeTimeoutsRef.current[field]) {
+      clearTimeout(geocodeTimeoutsRef.current[field]);
     }
+
+    // Debounce geocoding - only geocode after user stops typing for 800ms
+    const timeout = setTimeout(async () => {
+      // Use OpenRouteService/OSRM geocoding via backend (open source)
+      if (address.length > 5) {
+        try {
+          const response = await bookingsAPI.geocode(address);
+          const { lat, lng } = response.data;
+          const coords = { lat, lng };
+          
+          // Only update coordinates, NOT the address field (let user keep their typed text)
+          setFormData(prev => ({
+            ...prev,
+            [field]: { 
+              ...prev[field], 
+              coordinates: coords
+              // Don't update address - keep what user typed
+            }
+          }));
+
+          // Calculate distance and price if both addresses are set
+          const otherAddress = field === 'origin' ? formData.destination.address : formData.origin.address;
+          
+          if (otherAddress && otherAddress.length > 5) {
+            const otherCoords = field === 'origin' ? formData.destination.coordinates : formData.origin.coordinates;
+            if (otherCoords && otherCoords.lat !== 0 && otherCoords.lng !== 0) {
+              const dist = calculateDistance(
+                field === 'origin' ? coords : otherCoords,
+                field === 'origin' ? otherCoords : coords
+              );
+              setDistance(dist);
+              const price = truck ? Math.max(truck.rates.perKm * dist, truck.rates.minimumCharge) : 0;
+              setEstimatedPrice(price);
+            }
+          }
+        } catch (error: any) {
+          // Silently handle geocoding errors - don't show error to user
+          // Just use fallback coordinates
+          console.log('Geocoding not available, using fallback coordinates for:', address);
+          const baseCoords = { lat: -1.2921, lng: 36.8219 };
+          const hash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const coords = { 
+            lat: baseCoords.lat + (hash % 200) / 1000 - 0.1, 
+            lng: baseCoords.lng + (hash % 200) / 1000 - 0.1 
+          };
+          coords.lat = Math.max(-4.7, Math.min(5.5, coords.lat));
+          coords.lng = Math.max(33.9, Math.min(41.9, coords.lng));
+          
+          setFormData(prev => ({
+            ...prev,
+            [field]: { ...prev[field], coordinates: coords }
+          }));
+        }
+      }
+    }, 800); // Wait 800ms after user stops typing
+
+    // Store timeout so we can clear it if user types again
+    geocodeTimeoutsRef.current[field] = timeout;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

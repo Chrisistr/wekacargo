@@ -87,9 +87,6 @@ const CustomerDashboard: React.FC = () => {
     ['confirmed', 'in-transit'].includes(b.status)
   ).length;
 
-  const completedCount = bookings.filter(
-    b => b.status === 'completed'
-  ).length;
 
   const handleAlertSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

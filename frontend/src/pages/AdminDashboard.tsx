@@ -6,11 +6,6 @@ import Card from 'react-bootstrap/Card';
 import Table from 'react-bootstrap/Table';
 import Badge from 'react-bootstrap/Badge';
 import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal';
-import Tabs from 'react-bootstrap/Tabs';
-import Tab from 'react-bootstrap/Tab';
-import Alert from 'react-bootstrap/Alert';
 import { toast } from 'react-toastify';
 import { adminAPI } from '../services/api';
 import { useSelector } from 'react-redux';
@@ -74,14 +69,6 @@ const AdminDashboard: React.FC = () => {
 
 
 
-  const getStatusBadge = (status: string) => {
-    const variants: any = {
-      active: 'success',
-      suspended: 'warning',
-      banned: 'danger'
-    };
-    return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
-  };
 
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>

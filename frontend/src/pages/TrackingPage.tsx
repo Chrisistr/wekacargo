@@ -27,6 +27,21 @@ const TrackingPage: React.FC = () => {
     }
   };
 
+  // Auto-refresh tracking every 30 seconds if booking is in-transit
+  useEffect(() => {
+    if (!id || !booking || booking.status !== 'in-transit') {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (id) {
+        fetchBooking(id);
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [id, booking?.status]);
+
   if (loading) {
     return (
       <Container className="my-5">
@@ -89,7 +104,7 @@ const TrackingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Google Maps integration */}
+              {/* Route visualization (using open source routing) */}
               <div className="mt-4">
                 <GoogleMap
                   origin={booking.origin?.coordinates ? {

@@ -71,18 +71,6 @@ const Expenditure: React.FC = () => {
     })
     .reduce((sum, b) => sum + (b.pricing?.estimatedAmount || 0), 0);
 
-  const handleLogout = async () => {
-    try {
-      if (user) {
-        await authAPI.logout();
-      }
-    } catch (error) {
-      console.error('Logout API error:', error);
-    } finally {
-      dispatch(logout());
-      navigate('/');
-    }
-  };
 
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>

@@ -15,7 +15,6 @@ const AdminPaymentManagement: React.FC = () => {
   const [escrowStatusFilter, setEscrowStatusFilter] = useState<string>('all');
   const [paymentSearch, setPaymentSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundReason, setRefundReason] = useState('');
   const [adminNote, setAdminNote] = useState('');

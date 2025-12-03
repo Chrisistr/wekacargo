@@ -9,13 +9,10 @@ import Sidebar from '../components/Sidebar';
 
 const AdminUserManagement: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<'all' | 'trucker' | 'customer'>('all');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [showUserModal, setShowUserModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');

@@ -58,12 +58,13 @@ const Homepage: React.FC = () => {
       { threshold: 0.1 }
     );
 
-    sectionRefs.current.forEach((ref) => {
+    const currentRefs = sectionRefs.current;
+    currentRefs.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      sectionRefs.current.forEach((ref) => {
+      currentRefs.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
