@@ -267,7 +267,35 @@ const Settings: React.FC = () => {
                               onClick={() => {
                                 const input = document.createElement('input');
                                 input.type = 'file';
-                                input.accept = 'image}
+                                input.accept = 'image/*';
+                                input.onchange = (e: any) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      if (event.target?.result) {
+                                        setProfileForm({ ...profileForm, avatar: event.target.result as string });
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                };
+                                input.click();
+                              }}
+                            >
+                              Change Avatar
+                            </Button>
+                          </div>
+                        </div>
+                      </Form.Group>
+                      <div className="d-flex justify-content-end mt-3">
+                        <Button type="submit" variant="primary" disabled={loading}>
+                          {loading ? 'Updating...' : 'Update Profile'}
+                        </Button>
+                      </div>
+                    </Form>
+                    </Tab>
+                  )}
                   <Tab eventKey="password" title="Password">
                     <Form onSubmit={handlePasswordChange}>
                       <h5 className="mb-4">Change Password</h5>

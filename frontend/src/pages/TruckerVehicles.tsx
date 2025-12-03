@@ -355,30 +355,63 @@ const TruckerVehicles: React.FC = () => {
                     </Form.Group>
                   </Col>
                   <Col md={12}>
-                    <Form.Label>Vehicle Photos</Form.Label>
-                    {editForm.photos.map((url, index) => (
+                    <Form.Group>
+                      <Form.Label>Vehicle Photos</Form.Label>
+                      {editForm.photos.map((url, index) => (
+                        <Form.Control
+                          key={index}
+                          type="url"
+                          className="mb-2"
+                          placeholder="https://example.com/image.jpg"
+                          value={url}
+                          onChange={(e) => handleEditPhotoChange(index, e.target.value)}
+                        />
+                      ))}
+                      {editForm.photos.filter((url) => url.trim() !== '').length > 0 && (
+                        <div className="d-flex flex-wrap gap-2 mb-2">
+                          {editForm.photos
+                            .filter((url) => url.trim() !== '')
+                            .map((url, idx) => (
+                              <Image key={idx} src={url} thumbnail width={80} height={80} alt="Preview" />
+                            ))}
+                        </div>
+                      )}
                       <Form.Control
-                        key={index}
-                        type="url"
-                        className="mb-2"
-                        placeholder="https:
-                        value={url}
-                        onChange={(e) => handleEditPhotoChange(index, e.target.value)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e: any) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                const newPhotos = [...editForm.photos];
+                                newPhotos.push(event.target.result as string);
+                                setEditForm({ ...editForm, photos: newPhotos });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
                       />
-                    ))}
-                    {editForm.photos.filter((url) => url.trim() !== '').length > 0 && (
-                      <div className="d-flex flex-wrap gap-2 mb-2">
-                        {editForm.photos
-                          .filter((url) => url.trim() !== '')
-                          .map((url, idx) => (
-                            <Image key={idx} src={url} thumbnail width={80} height={80} alt="Preview" />
-                          ))}
-                      </div>
-                    )}
-                    <Form.Control
-                      type="file"
-                      accept="image}
-          <Modal show={showRemovalModal} onHide={() => setShowRemovalModal(false)} centered>
+                      <Form.Text className="text-muted">
+                        Upload truck photos (max 5)
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+              </Row>
+              <div className="d-flex justify-content-end gap-2 mt-3">
+                <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit" disabled={updatingTruck}>
+                  {updatingTruck ? 'Updating...' : 'Update Truck'}
+                </Button>
+              </div>
+          </Modal.Body>
+            </Form>
+        </Modal>
+        <Modal show={showRemovalModal} onHide={() => setShowRemovalModal(false)} centered>
             <Form onSubmit={handleSubmitRemoval}>
               <Modal.Header closeButton>
                 <Modal.Title>Request Vehicle Removal</Modal.Title>

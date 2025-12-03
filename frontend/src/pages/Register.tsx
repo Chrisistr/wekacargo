@@ -58,10 +58,16 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not configured. Google login will not work.');
+      return;
+    }
     const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
     if (existingScript) {
-      if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-        initializeGoogleSignIn();
+      if (window.google?.accounts?.id) {
+        setTimeout(() => initializeGoogleSignIn(), 100);
+      } else {
+        console.warn('Google script loaded but window.google.accounts.id is not available');
       }
       return;
     }
@@ -71,19 +77,27 @@ const Register: React.FC = () => {
     script.defer = true;
     script.id = 'google-identity-services-script';
     script.onload = () => {
-      if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-        initializeGoogleSignIn();
+      if (window.google?.accounts?.id) {
+        setTimeout(() => initializeGoogleSignIn(), 100);
+      } else {
+        console.error('Google script loaded but window.google.accounts.id is not available');
       }
     };
     script.onerror = () => {
-      console.error('Failed to load Google Identity Services');
+      console.error('Failed to load Google Identity Services script');
+      toast.error('Failed to load Google Sign-In. Please check your internet connection.');
     };
     document.head.appendChild(script);
     return () => {
     };
   }, []); 
   const initializeGoogleSignIn = () => {
-    if (!window.google?.accounts?.id || !process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not set');
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      console.error('window.google.accounts.id is not available');
       return;
     }
     try {
@@ -103,8 +117,10 @@ const Register: React.FC = () => {
               text: 'signup_with',
               locale: 'en'
             });
+            console.log('Customer Google sign-in button rendered successfully');
           } catch (error) {
             console.error('Error rendering customer Google button:', error);
+            toast.error('Failed to render Google Sign-In button');
           }
         }
         if (truckerButton && !truckerButton.hasChildNodes()) {
@@ -116,30 +132,37 @@ const Register: React.FC = () => {
               text: 'signup_with',
               locale: 'en'
             });
+            console.log('Trucker Google sign-in button rendered successfully');
           } catch (error) {
             console.error('Error rendering trucker Google button:', error);
+            toast.error('Failed to render Google Sign-In button');
           }
         }
       };
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(renderButtons, 200);
+          setTimeout(renderButtons, 500);
         });
       } else {
-        setTimeout(renderButtons, 200);
+        setTimeout(renderButtons, 500);
       }
     } catch (error) {
       console.error('Error initializing Google Sign-In:', error);
+      toast.error('Failed to initialize Google Sign-In');
     }
   };
   const handleGoogleSignIn = async (response: any) => {
-    if (!response.credential) {
+    console.log('Google sign-in response received');
+    if (!response || !response.credential) {
+      console.error('Invalid Google sign-in response:', response);
       toast.error('Google sign-in failed. Please try again.');
       return;
     }
     setLoading(true);
     try {
+      console.log('Sending Google credential to backend...');
       const result = await authAPI.googleLogin({ credential: response.credential });
+      console.log('Google login successful:', result.data);
       if (result.data.needsRegistration) {
         setGoogleUser(result.data);
         setRegistrationData({

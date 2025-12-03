@@ -64,7 +64,7 @@ const TruckDetails: React.FC = () => {
   }
   const trucker = truck.trucker || {};
   const photos = truck.photos && truck.photos.length > 0 ? truck.photos : [
-    'https:
+    'https://via.placeholder.com/400x300?text=No+Photo+Available',
   ];
   const isAdmin = user?.role === 'admin';
   return (

@@ -196,7 +196,7 @@ const TruckerAddVehicle: React.FC = () => {
                         key={index}
                         type="url"
                         className="mb-2"
-                        placeholder="https:
+                        placeholder="https://example.com/image.jpg"
                         value={url}
                         onChange={(e) => handlePhotoChange(index, e.target.value)}
                       />

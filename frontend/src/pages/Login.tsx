@@ -50,10 +50,16 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not configured. Google login will not work.');
+      return;
+    }
     const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
     if (existingScript) {
-      if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-        initializeGoogleSignIn();
+      if (window.google?.accounts?.id) {
+        setTimeout(() => initializeGoogleSignIn(), 100);
+      } else {
+        console.warn('Google script loaded but window.google.accounts.id is not available');
       }
       return;
     }
@@ -63,19 +69,27 @@ const Login: React.FC = () => {
     script.defer = true;
     script.id = 'google-identity-services-script';
     script.onload = () => {
-      if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-        initializeGoogleSignIn();
+      if (window.google?.accounts?.id) {
+        setTimeout(() => initializeGoogleSignIn(), 100);
+      } else {
+        console.error('Google script loaded but window.google.accounts.id is not available');
       }
     };
     script.onerror = () => {
-      console.error('Failed to load Google Identity Services');
+      console.error('Failed to load Google Identity Services script');
+      toast.error('Failed to load Google Sign-In. Please check your internet connection.');
     };
     document.head.appendChild(script);
     return () => {
     };
   }, []); 
   const initializeGoogleSignIn = () => {
-    if (!window.google?.accounts?.id || !process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not set');
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      console.error('window.google.accounts.id is not available');
       return;
     }
     try {
@@ -85,44 +99,58 @@ const Login: React.FC = () => {
       });
       const renderButton = () => {
         const buttonElement = document.getElementById('google-signin-button');
-        if (buttonElement && !buttonElement.hasChildNodes()) {
-          try {
-            window.google.accounts?.id.renderButton(buttonElement, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signin_with',
-              locale: 'en'
-            });
-          } catch (error) {
-            console.error('Error rendering Google sign-in button:', error);
-          }
+        if (!buttonElement) {
+          console.warn('Google sign-in button element not found');
+          return;
+        }
+        if (buttonElement.hasChildNodes()) {
+          console.log('Google sign-in button already rendered');
+          return;
+        }
+        try {
+          window.google.accounts?.id.renderButton(buttonElement, {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'signin_with',
+            locale: 'en'
+          });
+          console.log('Google sign-in button rendered successfully');
+        } catch (error) {
+          console.error('Error rendering Google sign-in button:', error);
+          toast.error('Failed to render Google Sign-In button');
         }
       };
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(renderButton, 200);
+          setTimeout(renderButton, 500);
         });
       } else {
-        setTimeout(renderButton, 200);
+        setTimeout(renderButton, 500);
       }
     } catch (error) {
       console.error('Error initializing Google Sign-In:', error);
+      toast.error('Failed to initialize Google Sign-In');
     }
   };
   const handleGoogleSignIn = async (response: any) => {
-    if (!response.credential) {
+    console.log('Google sign-in response received');
+    if (!response || !response.credential) {
+      console.error('Invalid Google sign-in response:', response);
       toast.error('Google sign-in failed. Please try again.');
       return;
     }
     setLoading(true);
     try {
+      console.log('Sending Google credential to backend...');
       const result = await authAPI.googleLogin({ credential: response.credential });
+      console.log('Google login successful:', result.data);
       handleGoogleResponse(result);
     } catch (error: any) {
       setLoading(false);
-      toast.error(error.response?.data?.message || 'Google login failed');
-      console.error(error);
+      const errorMessage = error.response?.data?.message || error.message || 'Google login failed';
+      console.error('Google login error:', error);
+      toast.error(errorMessage);
     }
   };
   const handleCompleteRegistration = async (e: React.FormEvent) => {
