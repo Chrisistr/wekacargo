@@ -12,14 +12,12 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-
 const AdminDashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>({});
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
-
   const fetchStats = useCallback(async () => {
     try {
       const response = await adminAPI.getAnalytics();
@@ -28,7 +26,6 @@ const AdminDashboard: React.FC = () => {
       console.error('Failed to fetch analytics');
     }
   }, []);
-
   const fetchAlerts = useCallback(async () => {
     try {
       setLoadingAlerts(true);
@@ -40,7 +37,6 @@ const AdminDashboard: React.FC = () => {
       setLoadingAlerts(false);
     }
   }, []);
-
   const handleAlertStatus = async (id: string, status: 'open' | 'in_progress' | 'resolved') => {
     try {
       await adminAPI.updateAlert(id, { status });
@@ -50,8 +46,6 @@ const AdminDashboard: React.FC = () => {
       toast.error('Failed to update alert');
     }
   };
-
-
   useEffect(() => {
     if (!user) {
       navigate('/admin/login');
@@ -64,12 +58,6 @@ const AdminDashboard: React.FC = () => {
     fetchStats();
     fetchAlerts();
   }, [user, navigate, fetchStats, fetchAlerts]);
-
-
-
-
-
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -85,8 +73,7 @@ const AdminDashboard: React.FC = () => {
               </p>
             </div>
           </div>
-          
-          {/* Statistics Cards */}
+          {}
           <Row className="mb-4 g-3">
             <Col md={3}>
               <Card className="stats-card">
@@ -129,10 +116,7 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </Col>
           </Row>
-
-
-
-          {/* User Alerts */}
+          {}
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -219,9 +203,6 @@ const AdminDashboard: React.FC = () => {
               )}
             </Card.Body>
           </Card>
-
-
-
         </Col>
       </Row>
         </Container>
@@ -229,6 +210,4 @@ const AdminDashboard: React.FC = () => {
     </div>
   );
 };
-
 export default AdminDashboard;
-

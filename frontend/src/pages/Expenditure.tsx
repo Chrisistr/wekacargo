@@ -8,7 +8,6 @@ import { bookingsAPI } from '../services/api';
 import { logout } from '../store/authSlice';
 import { authAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 interface Booking {
   _id: string;
   origin: { address: string };
@@ -18,14 +17,12 @@ interface Booking {
   status: string;
   createdAt: string;
 }
-
 const Expenditure: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
   const fetchBookings = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -40,7 +37,6 @@ const Expenditure: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -48,20 +44,16 @@ const Expenditure: React.FC = () => {
     }
     fetchBookings();
   }, [user, fetchBookings]);
-
   const totalSpend = bookings.reduce(
     (sum, b) => sum + (b.pricing?.estimatedAmount || 0),
     0
   );
-
   const completedSpend = bookings
     .filter(b => b.status === 'completed')
     .reduce((sum, b) => sum + (b.pricing?.estimatedAmount || 0), 0);
-
   const pendingSpend = bookings
     .filter(b => ['pending', 'confirmed', 'in-transit'].includes(b.status))
     .reduce((sum, b) => sum + (b.pricing?.estimatedAmount || 0), 0);
-
   const monthlySpend = bookings
     .filter(b => {
       const bookingDate = new Date(b.createdAt);
@@ -70,8 +62,6 @@ const Expenditure: React.FC = () => {
              bookingDate.getFullYear() === now.getFullYear();
     })
     .reduce((sum, b) => sum + (b.pricing?.estimatedAmount || 0), 0);
-
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -89,7 +79,6 @@ const Expenditure: React.FC = () => {
             </div>
           </Col>
         </Row>
-
         <Row className="mb-4 g-3">
           <Col md={3}>
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
@@ -136,7 +125,6 @@ const Expenditure: React.FC = () => {
             </Card>
           </Col>
         </Row>
-
         <Row>
           <Col>
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
@@ -202,6 +190,4 @@ const Expenditure: React.FC = () => {
     </div>
   );
 };
-
 export default Expenditure;
-

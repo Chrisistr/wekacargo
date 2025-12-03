@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { bookingsAPI, notificationsAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 interface Booking {
   _id: string;
   origin: { address: string };
@@ -17,7 +16,6 @@ interface Booking {
   createdAt: string;
   trucker?: { _id: string; name: string };
 }
-
 interface Notification {
   _id: string;
   type: string;
@@ -28,7 +26,6 @@ interface Notification {
   relatedBooking?: { _id: string };
   relatedUser?: { name: string; email: string };
 }
-
 const CustomerHome: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -38,7 +35,6 @@ const CustomerHome: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<string>('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const navigate = useNavigate();
-
   const fetchBookings = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -53,7 +49,6 @@ const CustomerHome: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     try {
@@ -63,7 +58,6 @@ const CustomerHome: React.FC = () => {
       console.error('Failed to fetch notifications:', error);
     }
   }, [user]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -72,7 +66,6 @@ const CustomerHome: React.FC = () => {
     fetchBookings();
     fetchNotifications();
   }, [user, fetchBookings, fetchNotifications]);
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       pending: 'warning',
@@ -83,46 +76,35 @@ const CustomerHome: React.FC = () => {
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
-
   const totalSpend = bookings.reduce(
     (sum, b) => sum + (b.pricing?.estimatedAmount || 0),
     0
   );
-
   const activeCount = bookings.filter(b =>
     ['confirmed', 'in-transit'].includes(b.status)
   ).length;
-
-
-  // Filter only incomplete deliveries (pending, confirmed, in-transit)
   const incompleteBookings = bookings
     .filter(b => ['pending', 'confirmed', 'in-transit'].includes(b.status))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
-
-  // Get bookings with truckers for messaging
   const bookingsWithTruckers = bookings.filter(b => 
     b.trucker && ['pending', 'confirmed', 'in-transit'].includes(b.status)
   );
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) {
       toast.error('Please enter a message');
       return;
     }
-
     if (!selectedBooking) {
       toast.error('Please select a booking to message the trucker');
       return;
     }
-
     const booking = bookings.find(b => b._id === selectedBooking);
     if (!booking || !booking.trucker) {
       toast.error('Trucker information not available for this booking');
       return;
     }
-
     setSendingMessage(true);
     try {
       await notificationsAPI.sendMessage({
@@ -130,11 +112,9 @@ const CustomerHome: React.FC = () => {
         bookingId: booking._id,
         message: newMessage
       });
-      
       toast.success('Message sent to trucker');
       setNewMessage('');
       setSelectedBooking('');
-      // Refresh notifications to show the sent message
       fetchNotifications();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to send message');
@@ -142,9 +122,7 @@ const CustomerHome: React.FC = () => {
       setSendingMessage(false);
     }
   };
-
   const unreadCount = notifications.filter(n => !n.read).length;
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -160,7 +138,6 @@ const CustomerHome: React.FC = () => {
             </div>
           </Col>
         </Row>
-
         <Row className="mb-4 g-3">
           <Col md={4}>
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
@@ -202,10 +179,9 @@ const CustomerHome: React.FC = () => {
             </Card>
           </Col>
         </Row>
-
         <Row>
           <Col md={8}>
-            {/* Recent or Pending Bookings */}
+            {}
             {loading ? (
               <Card className="text-center py-5" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
                 <Card.Body>
@@ -295,7 +271,7 @@ const CustomerHome: React.FC = () => {
             )}
           </Col>
           <Col md={4} className="mt-4 mt-md-0">
-            {/* Messages Section */}
+            {}
             <Card className="dashboard-card mb-3" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
               <Card.Body>
                 <div className="d-flex align-items-center justify-content-between mb-3">
@@ -382,8 +358,7 @@ const CustomerHome: React.FC = () => {
                     View All Notifications
                   </Button>
                 )}
-                
-                {/* Send Message to Trucker */}
+                {}
                 <div className="border-top pt-3">
                   <h6 className="mb-2 small fw-bold">Message a Trucker</h6>
                   <Form onSubmit={handleSendMessage}>
@@ -426,7 +401,6 @@ const CustomerHome: React.FC = () => {
                 </div>
               </Card.Body>
             </Card>
-
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
               <Card.Body>
                 <div className="d-flex align-items-center mb-3">
@@ -455,6 +429,4 @@ const CustomerHome: React.FC = () => {
     </div>
   );
 };
-
 export default CustomerHome;
-

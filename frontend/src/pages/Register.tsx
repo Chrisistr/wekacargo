@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { login, setUser } from '../store/authSlice';
 import { authAPI } from '../services/api';
-
 declare global {
   interface Window {
     google: {
@@ -34,7 +33,6 @@ declare global {
     };
   }
 }
-
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('customer');
   const [formData, setFormData] = useState({
@@ -59,58 +57,43 @@ const Register: React.FC = () => {
   const [completingRegistration, setCompletingRegistration] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   useEffect(() => {
-    // Check if Google Identity Services script is already loaded
     const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
     if (existingScript) {
-      // Script already exists, just initialize
       if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
         initializeGoogleSignIn();
       }
       return;
     }
-
-    // Load Google Identity Services script (separate from Maps API)
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
     script.id = 'google-identity-services-script';
-    
     script.onload = () => {
       if (window.google?.accounts?.id && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
         initializeGoogleSignIn();
       }
     };
-
     script.onerror = () => {
       console.error('Failed to load Google Identity Services');
     };
-
     document.head.appendChild(script);
-
     return () => {
-      // Don't remove the script - it might be used by other components
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
+  }, []); 
   const initializeGoogleSignIn = () => {
     if (!window.google?.accounts?.id || !process.env.REACT_APP_GOOGLE_CLIENT_ID) {
       return;
     }
-
     try {
       window.google.accounts?.id.initialize({
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn,
       });
-      
-      // Render Google sign-in buttons for both tabs
       const renderButtons = () => {
         const customerButton = document.getElementById('google-signin-button-customer');
         const truckerButton = document.getElementById('google-signin-button-trucker');
-        
         if (customerButton && !customerButton.hasChildNodes()) {
           try {
             window.google.accounts?.id.renderButton(customerButton, {
@@ -124,7 +107,6 @@ const Register: React.FC = () => {
             console.error('Error rendering customer Google button:', error);
           }
         }
-        
         if (truckerButton && !truckerButton.hasChildNodes()) {
           try {
             window.google.accounts?.id.renderButton(truckerButton, {
@@ -139,8 +121,6 @@ const Register: React.FC = () => {
           }
         }
       };
-      
-      // Render buttons after DOM is ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
           setTimeout(renderButtons, 200);
@@ -152,18 +132,14 @@ const Register: React.FC = () => {
       console.error('Error initializing Google Sign-In:', error);
     }
   };
-
   const handleGoogleSignIn = async (response: any) => {
     if (!response.credential) {
       toast.error('Google sign-in failed. Please try again.');
       return;
     }
-    
     setLoading(true);
     try {
       const result = await authAPI.googleLogin({ credential: response.credential });
-      
-      // Check if user needs to complete registration
       if (result.data.needsRegistration) {
         setGoogleUser(result.data);
         setRegistrationData({
@@ -192,25 +168,20 @@ const Register: React.FC = () => {
       setLoading(false);
     }
   };
-
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     setCompletingRegistration(true);
-    
     try {
       const completeData: any = {
         phone: registrationData.phone,
         role: registrationData.role,
       };
-
       if (registrationData.role === 'trucker' && registrationData.address) {
         completeData.location = {
           address: registrationData.address
         };
       }
-
       const result = await authAPI.completeGoogleRegistration(completeData);
-      
       dispatch(setUser(result.data.user));
       toast.success('Registration completed successfully!');
       setShowRegistrationModal(false);
@@ -223,14 +194,11 @@ const Register: React.FC = () => {
       setCompletingRegistration(false);
     }
   };
-
-  // Re-render Google buttons when tab changes
   useEffect(() => {
     if (window.google && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
       const renderButtons = () => {
         const customerButton = document.getElementById('google-signin-button-customer');
         const truckerButton = document.getElementById('google-signin-button-trucker');
-        
         if (customerButton && !customerButton.hasChildNodes()) {
           try {
             window.google.accounts?.id.renderButton(customerButton, {
@@ -244,7 +212,6 @@ const Register: React.FC = () => {
             console.error('Error rendering customer Google button:', error);
           }
         }
-        
         if (truckerButton && !truckerButton.hasChildNodes()) {
           try {
             window.google.accounts?.id.renderButton(truckerButton, {
@@ -259,22 +226,17 @@ const Register: React.FC = () => {
           }
         }
       };
-      
-      // Small delay to ensure DOM is updated
       setTimeout(renderButtons, 100);
     }
   }, [activeTab]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       setLoading(false);
       return;
     }
-
     try {
       const registrationData: any = {
         name: formData.name,
@@ -283,20 +245,16 @@ const Register: React.FC = () => {
         password: formData.password,
         role: activeTab
       };
-
       if (activeTab === 'trucker') {
         registrationData.location = {
           address: formData.address
         };
       }
-
       const response = await authAPI.register(registrationData);
-      
       dispatch(login({
         user: response.data.user,
         token: response.data.token
       }));
-
       toast.success('Registration successful!');
       navigate(`/dashboard/${response.data.user.role}`);
     } catch (error: any) {
@@ -306,7 +264,6 @@ const Register: React.FC = () => {
       setLoading(false);
     }
   };
-
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
@@ -314,7 +271,6 @@ const Register: React.FC = () => {
           <Card className="shadow">
             <Card.Body>
               <h2 className="text-center mb-4">Create Account</h2>
-              
               <Tabs
                 activeKey={activeTab}
                 onSelect={(k) => setActiveTab(k || 'customer')}
@@ -377,7 +333,6 @@ const Register: React.FC = () => {
                       {loading ? 'Registering...' : 'Register'}
                     </Button>
                   </Form>
-
                   <div className="text-center my-3">
                     <div className="position-relative">
                       <hr />
@@ -386,16 +341,13 @@ const Register: React.FC = () => {
                       </span>
                     </div>
                   </div>
-
                   <div id="google-signin-button-customer" className="mb-3"></div>
-                  
                   {!process.env.REACT_APP_GOOGLE_CLIENT_ID && (
                     <p className="text-muted small text-center">
                       Google sign-in is not configured
                     </p>
                   )}
                 </Tab>
-
                 <Tab eventKey="trucker" title="I'm a Trucker">
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
@@ -462,7 +414,6 @@ const Register: React.FC = () => {
                       {loading ? 'Registering...' : 'Register'}
                     </Button>
                   </Form>
-
                   <div className="text-center my-3">
                     <div className="position-relative">
                       <hr />
@@ -471,9 +422,7 @@ const Register: React.FC = () => {
                       </span>
                     </div>
                   </div>
-
                   <div id="google-signin-button-trucker" className="mb-3"></div>
-                  
                   {!process.env.REACT_APP_GOOGLE_CLIENT_ID && (
                     <p className="text-muted small text-center">
                       Google sign-in is not configured
@@ -485,8 +434,7 @@ const Register: React.FC = () => {
           </Card>
         </Col>
       </Row>
-
-      {/* Google Registration Modal */}
+      {}
       <Modal show={showRegistrationModal} onHide={() => {}} centered backdrop="static" keyboard={false}>
         <Modal.Header>
           <Modal.Title>Complete Your Registration</Modal.Title>
@@ -496,7 +444,6 @@ const Register: React.FC = () => {
             <p className="text-muted mb-4">
               Welcome, {googleUser?.user?.name}! Please provide the following information to complete your registration.
             </p>
-            
             <Form.Group className="mb-3">
               <Form.Label>Phone Number *</Form.Label>
               <Form.Control
@@ -508,7 +455,6 @@ const Register: React.FC = () => {
               />
               <Form.Text className="text-muted">We'll use this for important notifications</Form.Text>
             </Form.Group>
-
             <Form.Group className="mb-3">
               <Form.Label>I want to register as *</Form.Label>
               <Form.Select
@@ -520,7 +466,6 @@ const Register: React.FC = () => {
                 <option value="trucker">Trucker - I want to list my vehicles</option>
               </Form.Select>
             </Form.Group>
-
             {registrationData.role === 'trucker' && (
               <Form.Group className="mb-3">
                 <Form.Label>Base Location</Form.Label>
@@ -549,6 +494,4 @@ const Register: React.FC = () => {
     </Container>
   );
 };
-
 export default Register;
-

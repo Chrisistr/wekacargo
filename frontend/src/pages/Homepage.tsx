@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { trucksAPI } from '../services/api';
 import { RootState } from '../store';
-
 const Homepage: React.FC = () => {
   const [searchData, setSearchData] = useState({
     type: '',
@@ -21,11 +20,8 @@ const Homepage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [counters, setCounters] = useState({ loads: 0, trucks: 0, savings: 0 });
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-
   useEffect(() => {
     setIsVisible(true);
-    
-    // Animate counters
     const animateCounter = (target: number, setter: (val: number) => void, duration: number = 2000) => {
       let start = 0;
       const increment = target / (duration / 16);
@@ -39,14 +35,11 @@ const Homepage: React.FC = () => {
         }
       }, 16);
     };
-
     setTimeout(() => {
       animateCounter(10000, (val) => setCounters(prev => ({ ...prev, loads: val })));
       animateCounter(2000, (val) => setCounters(prev => ({ ...prev, trucks: val })));
       animateCounter(25, (val) => setCounters(prev => ({ ...prev, savings: val })));
     }, 500);
-
-    // Intersection Observer for scroll animations
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -57,28 +50,23 @@ const Homepage: React.FC = () => {
       },
       { threshold: 0.1 }
     );
-
     const currentRefs = sectionRefs.current;
     currentRefs.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
-
     return () => {
       currentRefs.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
   }, []);
-
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const params: any = {};
       if (searchData.type) params.type = searchData.type;
       if (searchData.minCapacity) params.minCapacity = parseFloat(searchData.minCapacity);
-      
       const response = await trucksAPI.getAll(params);
       setTrucks(response.data);
       setHasSearched(true);
@@ -91,7 +79,6 @@ const Homepage: React.FC = () => {
       setLoading(false);
     }
   };
-
   return (
     <div>
       <section className="hero-section">
@@ -135,12 +122,12 @@ const Homepage: React.FC = () => {
               {!isAuthenticated ? (
                 <div className="hero-image-container" style={{ overflow: 'hidden', width: '100%', height: '400px' }}>
                   <img 
-                    src="https://media.istockphoto.com/id/1340649474/photo/black-female-truck-driver-loading-boxes-in-cargo-space.jpg?s=612x612&w=0&k=20&c=XneRWW01azG7IGQ7mvDZW0X-HDZkp22499L36d0vwB8=" 
+                    src="https://via.placeholder.com/800x400?text=Truck+Image"
                     alt="Truck being loaded with cargo" 
                     className="hero-truck-image"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', display: 'block' }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=800&h=400&fit=crop&q=80';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                     }}
                   />
                 </div>
@@ -239,8 +226,6 @@ const Homepage: React.FC = () => {
           </Row>
         </Container>
       </section>
-
-
       {!isAuthenticated ? (
         <>
           <section className="py-5 bg-light features-section">
@@ -253,12 +238,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="feature-image-wrapper">
                   <img 
-                    src="https://imgs.search.brave.com/Hw58THF6iChuhwBL8ayIIQLJDV7owIOzy_5VxDJveQM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMudW5zcGxhc2gu/Y29tL3Bob3RvLTE1/NDM5OTY5OTEtOGU4/NTFjMmRjODQxP2Zt/PWpwZyZxPTYwJnc9/MzAwMCZpeGxpYj1y/Yi00LjEuMCZpeGlk/PU0zd3hNakEzZkRC/OE1IeHpaV0Z5WTJo/OE1UaDhmSEp2WVdS/emZHVnVmREI4ZkRC/OGZId3c" 
+                    src="https://via.placeholder.com/800x400?text=Truck+Image"
                     alt="Nationwide Coverage" 
                     className="feature-image"
                     style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=400&h=250&fit=crop&q=80';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                     }}
                   />
                     </div>
@@ -273,12 +258,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="feature-image-wrapper">
                   <img 
-                    src="https://imgs.search.brave.com/QO8pyjHuuM-7HkT2G8hKqgAMW08Bp3PpbFV4tZiHczs/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9mbGVl/dHdvcnRoeS5jb20v/d3AtY29udGVudC91/cGxvYWRzLzIwMjUv/MDIvZmxlZXQtbWFu/YWdlbWVudC10ZWNo/bm9sb2d5LmpwZw" 
+                    src="https://via.placeholder.com/800x400?text=Truck+Image"
                     alt="Verified Partners" 
                     className="feature-image"
                     style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=400&h=250&fit=crop&q=80';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                     }}
                   />
                     </div>
@@ -293,12 +278,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="feature-image-wrapper">
                   <img 
-                    src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=250&fit=crop&q=80" 
+                    src="https://via.placeholder.com/800x400?text=Truck+Image"
                     alt="Money currency notes and coins" 
                     className="feature-image"
                     style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=250&fit=crop&q=80';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                     }}
                   />
                     </div>
@@ -319,12 +304,12 @@ const Homepage: React.FC = () => {
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[3] = el; }}
                   >
                     <img 
-                      src="https://imgs.search.brave.com/s50Vhh2jyJNxb3ItIvv6y3Q0C7KKY70csSy8grlW7t0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTA0/MzE0NjE4L3Bob3Rv/L3RydWNrcy5qcGc_/cz02MTJ4NjEyJnc9/MCZrPTIwJmM9WTEz/QVdiWFUwYmlJdDBt/T3NhMlIyaWZia3ZB/T0hRaGF5MnNwZ3At/dWRxbz0" 
+                      src="https://via.placeholder.com/800x400?text=Truck+Image"
                       alt="How WekaCargo Works" 
                       className="how-it-works-image"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=600&h=400&fit=crop&q=80';
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                       }}
                     />
                   </div>
@@ -374,12 +359,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="target-card-image-wrapper">
                       <img 
-                        src="https://imgs.search.brave.com/FU2wgfiClHb-HNy5GISCaLpjnXeE1aNyDH34hTNysG8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9nZXR0/cmFuc3BvcnQuY29t/L2ltYWdlcy9sYW5k/aW5nL3RydWNrL2Zy/ZWlnaHRfc2Vydmlj/ZXMuanBn" 
+                        src="https://via.placeholder.com/800x400?text=Truck+Image"
                         alt="Nationwide connectivity" 
                         className="target-card-image"
                         style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=400&h=200&fit=crop&q=80';
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                         }}
                       />
                     </div>
@@ -398,12 +383,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="target-card-image-wrapper">
                       <img 
-                        src="https://imgs.search.brave.com/g3kzliZiXFZ5NkNQwH2QNm1JTmQGY619UkE0CLsG0dg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/ZmxlZXQuc29sZXJh/LmNvbS93cC1jb250/ZW50L3VwbG9hZHMv/MjAyNC8xMi85LVRy/dWNraW5nLVRlY2gt/VHJlbmRzLTEtc2Nh/bGVkLmpwZw" 
+                        src="https://via.placeholder.com/800x400?text=Truck+Image"
                         alt="Technology and innovation" 
                         className="target-card-image"
                         style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=400&h=200&fit=crop&q=80';
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                         }}
                       />
                     </div>
@@ -422,12 +407,12 @@ const Homepage: React.FC = () => {
                   >
                     <div className="target-card-image-wrapper">
                       <img 
-                        src="https://imgs.search.brave.com/OEDgpaGNxWWlT9octEraMgg4vHkB5IPzVZjN2o8I8II/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTU1/Mzk1OTEwL3Bob3Rv/L3RydWNraW5nLXN1/Y2Nlc3MuanBnP3M9/NjEyeDYxMiZ3PTAm/az0yMCZjPXRfd3pN/RWpVTmV4d2N0cVVk/aVhtcXZjamlnUnR2/dDVQWVBqc1dfZmVL/TWc9" 
+                        src="https://via.placeholder.com/800x400?text=Truck+Image"
                         alt="Trust and safety" 
                         className="target-card-image"
                         style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=400&h=200&fit=crop&q=80';
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                         }}
                       />
                     </div>
@@ -528,6 +513,4 @@ const Homepage: React.FC = () => {
     </div>
   );
 };
-
 export default Homepage;
-

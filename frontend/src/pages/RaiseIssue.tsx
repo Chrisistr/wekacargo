@@ -6,14 +6,12 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { alertsAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 const RaiseIssue: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [alertSubject, setAlertSubject] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
   const handleAlertSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -36,7 +34,6 @@ const RaiseIssue: React.FC = () => {
       setLoading(false);
     }
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       {(user?.role === 'customer' || user?.role === 'trucker') && <Sidebar />}
@@ -57,7 +54,6 @@ const RaiseIssue: React.FC = () => {
             </div>
           </Col>
         </Row>
-
         <Row>
           <Col md={8}>
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
@@ -144,6 +140,4 @@ const RaiseIssue: React.FC = () => {
     </div>
   );
 };
-
 export default RaiseIssue;
-

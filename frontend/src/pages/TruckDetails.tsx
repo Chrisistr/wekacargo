@@ -5,14 +5,12 @@ import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { trucksAPI } from '../services/api';
-
 const TruckDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [truck, setTruck] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   const fetchTruck = useCallback(async (truckId: string) => {
     try {
       const response = await trucksAPI.getById(truckId);
@@ -24,13 +22,11 @@ const TruckDetails: React.FC = () => {
       setLoading(false);
     }
   }, [navigate]);
-
   useEffect(() => {
     if (id) {
       fetchTruck(id);
     }
   }, [id, fetchTruck]);
-
   const handleBookTruck = () => {
     if (!isAuthenticated) {
       toast.info('Please login to book this truck');
@@ -43,7 +39,6 @@ const TruckDetails: React.FC = () => {
     }
     navigate(`/book-truck/${id}`);
   };
-
   if (loading) {
     return (
       <Container className="my-5 text-center">
@@ -54,7 +49,6 @@ const TruckDetails: React.FC = () => {
       </Container>
     );
   }
-
   if (!truck) {
     return (
       <Container className="my-5">
@@ -68,22 +62,19 @@ const TruckDetails: React.FC = () => {
       </Container>
     );
   }
-
   const trucker = truck.trucker || {};
   const photos = truck.photos && truck.photos.length > 0 ? truck.photos : [
-    'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=800&q=80'
+    'https:
   ];
   const isAdmin = user?.role === 'admin';
-
   return (
     <Container className="my-5">
       <Button variant="outline-secondary" className="mb-4" onClick={() => navigate(-1)}>
         ← Back
       </Button>
-
       <Row>
         <Col md={8}>
-          {/* Truck Photos */}
+          {}
           <Card className="shadow-sm mb-4">
             <Card.Body className="p-0">
               {photos.length > 1 ? (
@@ -97,7 +88,7 @@ const TruckDetails: React.FC = () => {
                           alt={`Truck ${index + 1}`}
                           style={{ objectFit: 'cover', height: '100%' }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=800&q=80';
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x500?text=No+Image';
                           }}
                         />
                       </div>
@@ -111,19 +102,17 @@ const TruckDetails: React.FC = () => {
                     alt={truck.type}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=800&q=80';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x500?text=No+Image';
                     }}
                   />
                 </div>
               )}
             </Card.Body>
           </Card>
-
-          {/* Truck Specifications */}
+          {}
           <Card className="shadow-sm mb-4">
             <Card.Body>
               <h3 className="mb-4">{truck.type.toUpperCase()} - {truck.registrationNumber}</h3>
-              
               <Row className="mb-4">
                 <Col md={6}>
                   <h5 className="mb-3">Vehicle Specifications</h5>
@@ -151,7 +140,6 @@ const TruckDetails: React.FC = () => {
                     <p><strong>Rate per Hour:</strong> KES {truck.rates.perHour.toLocaleString()}</p>
                   )}
                   <p><strong>Minimum Charge:</strong> KES {truck.rates?.minimumCharge?.toLocaleString() || 'N/A'}</p>
-                  
                   <div className="mt-3">
                     <h5 className="mb-3">Rating</h5>
                     <div className="d-flex align-items-center">
@@ -167,7 +155,6 @@ const TruckDetails: React.FC = () => {
                   </div>
                 </Col>
               </Row>
-
               {truck.features && truck.features.length > 0 && (
                 <div className="mb-4">
                   <h5 className="mb-3">Features</h5>
@@ -180,14 +167,12 @@ const TruckDetails: React.FC = () => {
                   </div>
                 </div>
               )}
-
               {truck.location?.address && (
                 <div className="mb-4">
                   <h5 className="mb-3">Location</h5>
                   <p><strong>Base Location:</strong> {truck.location.address}</p>
                 </div>
               )}
-
               <div className="mb-4">
                 <h5 className="mb-3">Availability</h5>
                 {truck.availability?.isAvailable ? (
@@ -201,7 +186,6 @@ const TruckDetails: React.FC = () => {
                   </p>
                 )}
               </div>
-
               {truck.insurance && (
                 <div>
                   <h5 className="mb-3">Insurance</h5>
@@ -217,7 +201,6 @@ const TruckDetails: React.FC = () => {
                   )}
                 </div>
               )}
-
               {isAdmin && truck.proofOfOwnership && (
                 <div className="mt-4">
                   <h5 className="mb-3">Proof of Ownership</h5>
@@ -250,13 +233,11 @@ const TruckDetails: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-
         <Col md={4}>
-          {/* Driver/Trucker Information */}
+          {}
           <Card className="shadow-sm mb-4 sticky-top" style={{ top: '20px' }}>
             <Card.Body>
               <h5 className="mb-4">Driver Information</h5>
-              
               <div className="text-center mb-4">
                 <div style={{
                   width: '100px',
@@ -292,7 +273,6 @@ const TruckDetails: React.FC = () => {
                 </div>
                 <h5>{trucker.name || 'Driver Name'}</h5>
               </div>
-
               <div className="mb-3">
                 <p><strong>Phone:</strong> {trucker.phone || 'N/A'}</p>
                 {trucker.email && (
@@ -302,7 +282,6 @@ const TruckDetails: React.FC = () => {
                   <p><strong>Location:</strong> {trucker.location.address}</p>
                 )}
               </div>
-
               {trucker.rating && (
                 <div className="mb-4">
                   <h6 className="mb-2">Driver Rating</h6>
@@ -318,16 +297,13 @@ const TruckDetails: React.FC = () => {
                   </div>
                 </div>
               )}
-
               {trucker.profile?.licenseNumber && (
                 <div className="mb-4">
                   <p><strong>License Number:</strong> {trucker.profile.licenseNumber}</p>
                 </div>
               )}
-
               <hr />
-
-              {/* Booking Button */}
+              {}
               <div className="d-grid gap-2">
                 {truck.availability?.isAvailable ? (
                   <Button 
@@ -353,8 +329,7 @@ const TruckDetails: React.FC = () => {
               </div>
             </Card.Body>
           </Card>
-
-          {/* Quick Info Card */}
+          {}
           <Card className="shadow-sm">
             <Card.Body>
               <h6 className="mb-3">Quick Information</h6>
@@ -372,7 +347,4 @@ const TruckDetails: React.FC = () => {
     </Container>
   );
 };
-
 export default TruckDetails;
-
-

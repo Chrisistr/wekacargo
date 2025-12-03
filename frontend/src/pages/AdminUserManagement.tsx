@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { adminAPI, notificationsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-
 const AdminUserManagement: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [users, setUsers] = useState<any[]>([]);
@@ -19,7 +18,6 @@ const AdminUserManagement: React.FC = () => {
   const [sendingNotification, setSendingNotification] = useState(false);
   const [notificationTargetUser, setNotificationTargetUser] = useState<any>(null);
   const [sendToAllUsers, setSendToAllUsers] = useState(false);
-
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -38,13 +36,11 @@ const AdminUserManagement: React.FC = () => {
       setLoading(false);
     }
   }, [searchTerm, selectedRole]);
-
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchUsers();
     }
   }, [user, fetchUsers]);
-
   const updateUserStatus = async (userId: string, status: string) => {
     try {
       await adminAPI.updateUser(userId, { status });
@@ -55,7 +51,6 @@ const AdminUserManagement: React.FC = () => {
       toast.error(errorMessage);
     }
   };
-
   const handleSendNotification = (targetUser: any = null) => {
     setNotificationTargetUser(targetUser);
     setSendToAllUsers(!targetUser);
@@ -63,24 +58,20 @@ const AdminUserManagement: React.FC = () => {
     setNotificationMessage('');
     setShowNotificationModal(true);
   };
-
   const sendNotification = async () => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
       toast.error('Please fill in both title and message');
       return;
     }
-
     if (!sendToAllUsers && !notificationTargetUser) {
       toast.error('Please select a user or choose to send to all users');
       return;
     }
-
     setSendingNotification(true);
     try {
       if (sendToAllUsers) {
         const allUsersResponse = await adminAPI.getUsers({});
         const allUserIds = allUsersResponse.data.map((u: any) => u._id);
-        
         await notificationsAPI.adminSend({
           userIds: allUserIds,
           title: notificationTitle.trim(),
@@ -97,7 +88,6 @@ const AdminUserManagement: React.FC = () => {
         });
         toast.success(`Notification sent to ${notificationTargetUser.name}`);
       }
-      
       setShowNotificationModal(false);
       setNotificationTitle('');
       setNotificationMessage('');
@@ -109,7 +99,6 @@ const AdminUserManagement: React.FC = () => {
       setSendingNotification(false);
     }
   };
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       active: 'success',
@@ -118,7 +107,6 @@ const AdminUserManagement: React.FC = () => {
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -130,7 +118,6 @@ const AdminUserManagement: React.FC = () => {
               <p className="text-muted mb-0">Manage all platform users, view details, and send notifications</p>
             </Col>
           </Row>
-
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -162,7 +149,6 @@ const AdminUserManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-
               {loading ? (
                 <p>Loading...</p>
               ) : (
@@ -311,8 +297,7 @@ const AdminUserManagement: React.FC = () => {
               )}
             </Card.Body>
           </Card>
-
-          {/* Send Notification Modal */}
+          {}
           <Modal show={showNotificationModal} onHide={() => {
             setShowNotificationModal(false);
             setNotificationTitle('');
@@ -386,6 +371,4 @@ const AdminUserManagement: React.FC = () => {
     </div>
   );
 };
-
 export default AdminUserManagement;
-

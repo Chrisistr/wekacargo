@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { trucksAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-
 const TruckerAddVehicle: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
@@ -21,17 +20,14 @@ const TruckerAddVehicle: React.FC = () => {
     photos: [''],
     proofOfOwnership: ''
   });
-
   const handlePhotoChange = (index: number, value: string) => {
     const updatedPhotos = [...truckForm.photos];
     updatedPhotos[index] = value;
     setTruckForm({ ...truckForm, photos: updatedPhotos });
   };
-
   const addPhotoField = () => {
     setTruckForm({ ...truckForm, photos: [...truckForm.photos, ''] });
   };
-
   const handlePhotoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const toBase64 = (file: File) =>
@@ -41,18 +37,15 @@ const TruckerAddVehicle: React.FC = () => {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = (error) => reject(error);
       });
-
     const converted = await Promise.all(Array.from(files).map((file) => toBase64(file)));
     setTruckForm((prev) => ({
       ...prev,
       photos: [...prev.photos.filter((url) => url.trim() !== ''), ...converted]
     }));
   };
-
   const handleProofOfOwnershipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const toBase64 = (file: File) =>
       new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -60,10 +53,7 @@ const TruckerAddVehicle: React.FC = () => {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = (error) => reject(error);
       });
-
     try {
-      // For multiple files, we'll store the first one or combine them
-      // The backend can be extended later to handle multiple documents
       const base64 = await toBase64(files[0]);
       setTruckForm({ ...truckForm, proofOfOwnership: base64 });
       if (files.length > 1) {
@@ -75,11 +65,9 @@ const TruckerAddVehicle: React.FC = () => {
       toast.error('Failed to upload document(s)');
     }
   };
-
   const handleTruckSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-
     try {
       setAddingTruck(true);
       const payload: any = {
@@ -98,11 +86,9 @@ const TruckerAddVehicle: React.FC = () => {
           isAvailable: true
         }
       };
-
       if (truckForm.proofOfOwnership) {
         payload.proofOfOwnership = truckForm.proofOfOwnership;
       }
-
       await trucksAPI.create(payload);
       toast.success('Vehicle added successfully!');
       navigate('/dashboard/trucker');
@@ -112,7 +98,6 @@ const TruckerAddVehicle: React.FC = () => {
       setAddingTruck(false);
     }
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -124,7 +109,6 @@ const TruckerAddVehicle: React.FC = () => {
               <p className="text-muted mb-0">Register your truck to start receiving bookings</p>
             </Col>
           </Row>
-
           <Card className="mb-4" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
             <Card.Body>
               <Form onSubmit={handleTruckSubmit}>
@@ -204,7 +188,6 @@ const TruckerAddVehicle: React.FC = () => {
                     </Form.Group>
                   </Col>
                 </Row>
-
                 <Row className="g-3 mt-2">
                   <Col md={12}>
                     <Form.Label>Vehicle Photos</Form.Label>
@@ -213,7 +196,7 @@ const TruckerAddVehicle: React.FC = () => {
                         key={index}
                         type="url"
                         className="mb-2"
-                        placeholder="https://example.com/photo.jpg"
+                        placeholder="https:
                         value={url}
                         onChange={(e) => handlePhotoChange(index, e.target.value)}
                       />
@@ -239,7 +222,6 @@ const TruckerAddVehicle: React.FC = () => {
                     </Button>
                   </Col>
                 </Row>
-
                 <Row className="g-3 mt-2">
                   <Col md={12}>
                     <Form.Group>
@@ -273,7 +255,6 @@ const TruckerAddVehicle: React.FC = () => {
                     </Form.Group>
                   </Col>
                 </Row>
-
                 <div className="text-end mt-3">
                   <Button variant="outline-secondary" className="me-2" onClick={() => navigate('/dashboard/trucker')}>
                     Cancel
@@ -290,6 +271,4 @@ const TruckerAddVehicle: React.FC = () => {
     </div>
   );
 };
-
 export default TruckerAddVehicle;
-

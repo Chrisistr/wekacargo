@@ -3,23 +3,15 @@ import { Container, Row, Col, Card, Table, Badge, Button, Form } from 'react-boo
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'react-toastify';
-import { ratingsAPI, adminAPI } from '../services/api';
+import { ratingsAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 const AdminReviewsManagement: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [reviewSearch, setReviewSearch] = useState('');
   const [reviewStatusFilter, setReviewStatusFilter] = useState<'all' | 'active' | 'deleted'>('all');
-  const fetchStats = useCallback(async () => {
-    try {
-      await adminAPI.getAnalytics();
-    } catch (error) {
-      console.error('Failed to fetch analytics');
-    }
-  }, []);
-
+  
   const fetchReviews = useCallback(async () => {
     try {
       setLoadingReviews(true);
@@ -38,29 +30,23 @@ const AdminReviewsManagement: React.FC = () => {
       setLoadingReviews(false);
     }
   }, [reviewSearch, reviewStatusFilter]);
-
   const handleDeleteReview = async (reviewId: string) => {
     if (!window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
       return;
     }
-
     try {
       await ratingsAPI.delete(reviewId);
       toast.success('Review deleted successfully');
       fetchReviews();
-      fetchStats(); // Refresh stats to update ratings
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete review');
     }
   };
-
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchReviews();
-      fetchStats();
     }
-  }, [user, fetchReviews, fetchStats]);
-
+  }, [user, fetchReviews]);
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -72,7 +58,6 @@ const AdminReviewsManagement: React.FC = () => {
               <p className="text-muted mb-0">Manage user reviews and ratings across the platform</p>
             </Col>
           </Row>
-
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -95,7 +80,6 @@ const AdminReviewsManagement: React.FC = () => {
                   </Form.Select>
                 </div>
               </div>
-
               {loadingReviews ? (
                 <p>Loading reviews...</p>
               ) : reviews.length === 0 ? (
@@ -175,9 +159,4 @@ const AdminReviewsManagement: React.FC = () => {
     </div>
   );
 };
-
 export default AdminReviewsManagement;
-
-
-
-

@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { login } from '../store/authSlice';
 import { authAPI } from '../services/api';
-
 const AdminLogin: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -14,42 +13,30 @@ const AdminLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate inputs
     if (!formData.email || !formData.password) {
       toast.error('Please fill in all fields');
       return;
     }
-
     setLoading(true);
-
     try {
       const response = await authAPI.adminLogin({
         email: formData.email.trim(),
         password: formData.password
       });
-
       if (!response.data || !response.data.token || !response.data.user) {
         throw new Error('Invalid response from server');
       }
-
-      // Normalize user object
       const user = {
         ...response.data.user,
         id: response.data.user.id || response.data.user._id
       };
-
       dispatch(login({
         user: user,
         token: response.data.token
       }));
-
       toast.success('Welcome back, admin!');
-      
-      // Small delay to ensure state is updated
       setTimeout(() => {
         navigate('/dashboard/admin');
       }, 100);
@@ -63,7 +50,6 @@ const AdminLogin: React.FC = () => {
       setLoading(false);
     }
   };
-
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
@@ -74,7 +60,6 @@ const AdminLogin: React.FC = () => {
               <p className="text-muted text-center">
                 Secure access for platform administrators
               </p>
-              
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Username or Email</Form.Label>
@@ -111,12 +96,4 @@ const AdminLogin: React.FC = () => {
     </Container>
   );
 };
-
 export default AdminLogin;
-
-
-
-
-
-
-

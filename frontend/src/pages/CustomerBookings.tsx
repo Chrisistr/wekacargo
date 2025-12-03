@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { bookingsAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 interface Booking {
   _id: string;
   origin: { address: string };
@@ -16,13 +15,11 @@ interface Booking {
   status: string;
   createdAt: string;
 }
-
 const CustomerBookings: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
   const fetchBookings = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -37,7 +34,6 @@ const CustomerBookings: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -45,7 +41,6 @@ const CustomerBookings: React.FC = () => {
     }
     fetchBookings();
   }, [user, fetchBookings]);
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       pending: 'warning',
@@ -56,7 +51,6 @@ const CustomerBookings: React.FC = () => {
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -80,7 +74,6 @@ const CustomerBookings: React.FC = () => {
             </div>
           </Col>
         </Row>
-
         {loading ? (
           <Card className="text-center py-5" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
             <Card.Body>
@@ -160,6 +153,4 @@ const CustomerBookings: React.FC = () => {
     </div>
   );
 };
-
 export default CustomerBookings;
-

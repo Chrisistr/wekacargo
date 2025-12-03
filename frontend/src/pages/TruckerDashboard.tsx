@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { bookingsAPI, trucksAPI, notificationsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-
 interface Booking {
   _id: string;
   customer: { name: string; phone: string; profile?: { avatar?: string } };
@@ -17,7 +16,6 @@ interface Booking {
   status: string;
   createdAt: string;
 }
-
 interface Notification {
   _id: string;
   type: string;
@@ -28,7 +26,6 @@ interface Notification {
   relatedBooking?: { _id: string };
   relatedUser?: { name: string; email: string };
 }
-
 const TruckerDashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const userId = user?.id || (user as any)?._id || '';
@@ -37,7 +34,6 @@ const TruckerDashboard: React.FC = () => {
   const [myTrucks, setMyTrucks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
   const belongsToCurrentUser = useCallback(
     (truck: any) => {
       if (!userId) return false;
@@ -50,7 +46,6 @@ const TruckerDashboard: React.FC = () => {
     },
     [userId]
   );
-
   const fetchBookings = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -65,7 +60,6 @@ const TruckerDashboard: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
   const fetchTrucks = useCallback(async () => {
     if (!user) return;
     try {
@@ -75,7 +69,6 @@ const TruckerDashboard: React.FC = () => {
       console.error('Failed to fetch trucks');
     }
   }, [user, belongsToCurrentUser]);
-
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     try {
@@ -85,7 +78,6 @@ const TruckerDashboard: React.FC = () => {
       console.error('Failed to fetch notifications:', error);
     }
   }, [user]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -95,7 +87,6 @@ const TruckerDashboard: React.FC = () => {
     fetchTrucks();
     fetchNotifications();
   }, [user, fetchBookings, fetchTrucks, fetchNotifications]);
-
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
       await bookingsAPI.update(bookingId, { status: newStatus });
@@ -105,7 +96,6 @@ const TruckerDashboard: React.FC = () => {
       toast.error('Failed to update status');
     }
   };
-
   const activeBookings = bookings.filter(b =>
     ['confirmed', 'in-transit'].includes(b.status)
   );
@@ -114,9 +104,7 @@ const TruckerDashboard: React.FC = () => {
     (sum, b) => sum + (b.pricing?.estimatedAmount || 0),
     0
   );
-
   const unreadCount = notifications.filter(n => !n.read).length;
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       pending: 'warning',
@@ -127,7 +115,6 @@ const TruckerDashboard: React.FC = () => {
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -141,7 +128,6 @@ const TruckerDashboard: React.FC = () => {
                 Manage your vehicles, track bookings, and grow your earnings across Kenya.
               </p>
             </div>
-          
             <Row className="mb-4 g-3">
               <Col md={3}>
                 <Card className="stats-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
@@ -188,8 +174,7 @@ const TruckerDashboard: React.FC = () => {
                 </Card>
               </Col>
             </Row>
-
-          {/* New Delivery Requests (Pending Bookings) */}
+          {}
           {!loading && bookings.filter(b => b.status === 'pending').length > 0 && (
             <Row className="mb-4">
               <Col>
@@ -246,7 +231,6 @@ const TruckerDashboard: React.FC = () => {
                             </div>
                             {getStatusBadge(booking.status)}
                           </div>
-                          
                           <div className="mb-3">
                             <p className="mb-1">
                               <strong>Route:</strong> {booking.origin.address} → {booking.destination.address}
@@ -262,7 +246,6 @@ const TruckerDashboard: React.FC = () => {
                               </strong>
                             </p>
                           </div>
-
                           <div className="d-flex gap-2 flex-wrap">
                             <Button 
                               size="sm" 
@@ -287,8 +270,7 @@ const TruckerDashboard: React.FC = () => {
               </Col>
             </Row>
           )}
-
-          {/* Undelivered (Confirmed & In-Transit Bookings) */}
+          {}
           {!loading && activeBookings.length > 0 && (
             <Row className="mb-4">
               <Col>
@@ -345,7 +327,6 @@ const TruckerDashboard: React.FC = () => {
                             </div>
                             {getStatusBadge(booking.status)}
                           </div>
-                          
                           <div className="mb-3">
                             <p className="mb-1">
                               <strong>Route:</strong> {booking.origin.address} → {booking.destination.address}
@@ -361,7 +342,6 @@ const TruckerDashboard: React.FC = () => {
                               </strong>
                             </p>
                           </div>
-
                           <div className="d-flex gap-2 flex-wrap">
                             {booking.status === 'confirmed' && (
                               <Button 
@@ -397,7 +377,6 @@ const TruckerDashboard: React.FC = () => {
               </Col>
             </Row>
           )}
-
           {!loading && bookings.filter(b => b.status === 'pending').length === 0 && activeBookings.length === 0 && (
             <Card className="text-center py-5" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
               <Card.Body>
@@ -407,7 +386,7 @@ const TruckerDashboard: React.FC = () => {
           )}
         </Col>
         <Col md={3} className="mt-4 mt-md-0">
-          {/* Messages & Notifications Section */}
+          {}
           <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
             <Card.Body>
               <div className="d-flex align-items-center justify-content-between mb-3">
@@ -490,8 +469,6 @@ const TruckerDashboard: React.FC = () => {
                     variant="outline-primary" 
                     size="sm"
                     onClick={() => {
-                      // Navigate to a full notifications page if it exists, or just show all
-                      // For now, we'll just show a message
                       toast.info('View all notifications feature coming soon');
                     }}
                   >
@@ -503,12 +480,9 @@ const TruckerDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
-
         </Container>
       </div>
     </div>
   );
 };
-
 export default TruckerDashboard;
-

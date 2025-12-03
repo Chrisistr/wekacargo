@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { trucksAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-
 const TruckerVehicles: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const userId = user?.id || (user as any)?._id || '';
@@ -30,7 +29,6 @@ const TruckerVehicles: React.FC = () => {
     proofOfOwnership: ''
   });
   const [updatingTruck, setUpdatingTruck] = useState(false);
-
   const belongsToCurrentUser = useCallback(
     (truck: any) => {
       if (!userId) return false;
@@ -43,7 +41,6 @@ const TruckerVehicles: React.FC = () => {
     },
     [userId]
   );
-
   const fetchTrucks = useCallback(async () => {
     if (!user) return;
     try {
@@ -56,7 +53,6 @@ const TruckerVehicles: React.FC = () => {
       setLoading(false);
     }
   }, [user, belongsToCurrentUser]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -64,13 +60,11 @@ const TruckerVehicles: React.FC = () => {
     }
     fetchTrucks();
   }, [user, fetchTrucks]);
-
   const openRemovalModal = (truck: any) => {
     setSelectedTruck(truck);
     setRemovalReason('');
     setShowRemovalModal(true);
   };
-
   const openEditModal = (truck: any) => {
     setEditingTruck(truck);
     setEditForm({
@@ -86,11 +80,9 @@ const TruckerVehicles: React.FC = () => {
     });
     setShowEditModal(true);
   };
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTruck) return;
-
     try {
       setUpdatingTruck(true);
       const payload: any = {
@@ -109,11 +101,9 @@ const TruckerVehicles: React.FC = () => {
           isAvailable: editForm.isAvailable
         }
       };
-
       if (editForm.proofOfOwnership) {
         payload.proofOfOwnership = editForm.proofOfOwnership;
       }
-
       await trucksAPI.update(editingTruck._id, payload);
       toast.success('Truck updated successfully');
       setShowEditModal(false);
@@ -124,17 +114,14 @@ const TruckerVehicles: React.FC = () => {
       setUpdatingTruck(false);
     }
   };
-
   const handleEditPhotoChange = (index: number, value: string) => {
     const updatedPhotos = [...editForm.photos];
     updatedPhotos[index] = value;
     setEditForm({ ...editForm, photos: updatedPhotos });
   };
-
   const addEditPhotoField = () => {
     setEditForm({ ...editForm, photos: [...editForm.photos, ''] });
   };
-
   const handleEditPhotoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const toBase64 = (file: File) =>
@@ -144,18 +131,15 @@ const TruckerVehicles: React.FC = () => {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = (error) => reject(error);
       });
-
     const converted = await Promise.all(Array.from(files).map((file) => toBase64(file)));
     setEditForm((prev) => ({
       ...prev,
       photos: [...prev.photos.filter((url) => url.trim() !== ''), ...converted]
     }));
   };
-
   const handleEditProofOfOwnershipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const toBase64 = (file: File) =>
       new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -163,10 +147,7 @@ const TruckerVehicles: React.FC = () => {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = (error) => reject(error);
       });
-
     try {
-      // For multiple files, we'll store the first one or combine them
-      // The backend can be extended later to handle multiple documents
       const base64 = await toBase64(files[0]);
       setEditForm((prev) => ({ ...prev, proofOfOwnership: base64 }));
       if (files.length > 1) {
@@ -178,11 +159,9 @@ const TruckerVehicles: React.FC = () => {
       toast.error('Failed to upload document(s)');
     }
   };
-
   const handleSubmitRemoval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTruck) return;
-
     try {
       if (!removalReason.trim()) {
         toast.warn('Please provide a reason for removal.');
@@ -196,7 +175,6 @@ const TruckerVehicles: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to submit removal request');
     }
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -215,7 +193,6 @@ const TruckerVehicles: React.FC = () => {
               </div>
             </Col>
           </Row>
-
           {loading ? (
             <Card className="text-center py-5" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
               <Card.Body>
@@ -285,8 +262,7 @@ const TruckerVehicles: React.FC = () => {
               ))}
             </Row>
           )}
-
-          {/* Edit Modal */}
+          {}
           <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
             <Form onSubmit={handleEditSubmit}>
               <Modal.Header closeButton>
@@ -385,7 +361,7 @@ const TruckerVehicles: React.FC = () => {
                         key={index}
                         type="url"
                         className="mb-2"
-                        placeholder="https://example.com/photo.jpg"
+                        placeholder="https:
                         value={url}
                         onChange={(e) => handleEditPhotoChange(index, e.target.value)}
                       />
@@ -401,60 +377,7 @@ const TruckerVehicles: React.FC = () => {
                     )}
                     <Form.Control
                       type="file"
-                      accept="image/*"
-                      multiple
-                      className="mb-2"
-                      onChange={(e) => handleEditPhotoUpload((e.target as HTMLInputElement).files)}
-                    />
-                    <Button variant="link" type="button" size="sm" onClick={addEditPhotoField}>
-                      + Add another link
-                    </Button>
-                  </Col>
-                  <Col md={12}>
-                    <Form.Group>
-                      <Form.Label>Vehicle Documents (Proof of Ownership, Logbook, Insurance, etc.)</Form.Label>
-                      <Alert variant="info" className="mb-3">
-                        <strong>Important:</strong> We strongly encourage you to upload all relevant vehicle documents to build trust with customers and speed up verification. This includes:
-                        <ul className="mb-0 mt-2">
-                          <li><strong>Logbook</strong> - Official vehicle registration document</li>
-                          <li><strong>Proof of Ownership</strong> - Title deed or purchase receipt</li>
-                          <li><strong>Insurance Certificate</strong> - Valid insurance documentation</li>
-                          <li><strong>Inspection Certificate</strong> - Roadworthiness certificate (if available)</li>
-                        </ul>
-                        <p className="mb-0 mt-2 small">These documents help customers feel confident booking your vehicle and may increase your booking rates. All documents are securely stored and only visible to administrators for verification purposes.</p>
-                      </Alert>
-                      <Form.Text className="text-muted d-block mb-2">
-                        Upload documents or images (PDF, JPG, PNG). You can upload multiple files.
-                      </Form.Text>
-                      <Form.Control
-                        type="file"
-                        accept="image/*,.pdf"
-                        multiple
-                        onChange={handleEditProofOfOwnershipUpload}
-                      />
-                      {editForm.proofOfOwnership && (
-                        <div className="mt-2">
-                          <Alert variant="success" className="mb-0 py-2">
-                            Document(s) uploaded successfully
-                          </Alert>
-                        </div>
-                      )}
-                    </Form.Group>
-                  </Col>
-                </Row>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary" disabled={updatingTruck}>
-                  {updatingTruck ? 'Updating...' : 'Save Changes'}
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
-
-          {/* Removal Modal */}
+                      accept="image}
           <Modal show={showRemovalModal} onHide={() => setShowRemovalModal(false)} centered>
             <Form onSubmit={handleSubmitRemoval}>
               <Modal.Header closeButton>
@@ -497,6 +420,4 @@ const TruckerVehicles: React.FC = () => {
     </div>
   );
 };
-
 export default TruckerVehicles;
-

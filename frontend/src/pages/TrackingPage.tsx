@@ -4,18 +4,15 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { bookingsAPI } from '../services/api';
 import GoogleMap from '../components/GoogleMap';
-
 const TrackingPage: React.FC = () => {
   const { id } = useParams();
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (id) {
       fetchBooking(id);
     }
   }, [id]);
-
   const fetchBooking = async (bookingId: string) => {
     try {
       const response = await bookingsAPI.getById(bookingId);
@@ -26,22 +23,17 @@ const TrackingPage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  // Auto-refresh tracking every 30 seconds if booking is in-transit
   useEffect(() => {
     if (!id || !booking || booking.status !== 'in-transit') {
       return;
     }
-
     const interval = setInterval(() => {
       if (id) {
         fetchBooking(id);
       }
-    }, 30000); // Refresh every 30 seconds
-
+    }, 30000); 
     return () => clearInterval(interval);
   }, [id, booking?.status]);
-
   if (loading) {
     return (
       <Container className="my-5">
@@ -49,7 +41,6 @@ const TrackingPage: React.FC = () => {
       </Container>
     );
   }
-
   if (!booking) {
     return (
       <Container className="my-5">
@@ -57,7 +48,6 @@ const TrackingPage: React.FC = () => {
       </Container>
     );
   }
-
   return (
     <Container className="my-5">
       <Row>
@@ -65,12 +55,10 @@ const TrackingPage: React.FC = () => {
           <Card>
             <Card.Body>
               <h2 className="mb-4">Track Your Delivery</h2>
-              
               <div className="mb-4">
                 <h5>Current Status</h5>
                 <p className="fs-4 text-capitalize">{booking.status}</p>
               </div>
-
               <div className="mb-4">
                 <h5>Origin</h5>
                 <p>{booking.origin.address}</p>
@@ -80,7 +68,6 @@ const TrackingPage: React.FC = () => {
                   </p>
                 )}
               </div>
-
               <div className="mb-4">
                 <h5>Destination</h5>
                 <p>{booking.destination.address}</p>
@@ -90,7 +77,6 @@ const TrackingPage: React.FC = () => {
                   </p>
                 )}
               </div>
-
               {booking.tracking?.currentLocation && (
                 <div className="mb-4">
                   <h5>Current Location</h5>
@@ -103,8 +89,7 @@ const TrackingPage: React.FC = () => {
                   </p>
                 </div>
               )}
-
-              {/* Route visualization (using open source routing) */}
+              {}
               <div className="mt-4">
                 <GoogleMap
                   origin={booking.origin?.coordinates ? {
@@ -129,6 +114,4 @@ const TrackingPage: React.FC = () => {
     </Container>
   );
 };
-
 export default TrackingPage;
-

@@ -5,7 +5,6 @@ import { RootState } from '../store';
 import { toast } from 'react-toastify';
 import { adminAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
-
 const AdminPaymentManagement: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [payments, setPayments] = useState<any[]>([]);
@@ -18,7 +17,6 @@ const AdminPaymentManagement: React.FC = () => {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundReason, setRefundReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
-
   const fetchEscrowSummary = useCallback(async () => {
     try {
       const response = await adminAPI.getEscrowSummary();
@@ -27,7 +25,6 @@ const AdminPaymentManagement: React.FC = () => {
       console.error('Failed to fetch escrow summary');
     }
   }, []);
-
   const fetchPayments = useCallback(async () => {
     try {
       setLoadingPayments(true);
@@ -43,20 +40,17 @@ const AdminPaymentManagement: React.FC = () => {
       setLoadingPayments(false);
     }
   }, [paymentStatusFilter, escrowStatusFilter, paymentSearch]);
-
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchEscrowSummary();
       fetchPayments();
     }
   }, [user, fetchEscrowSummary, fetchPayments]);
-
   const handleRefund = async () => {
     if (!refundReason.trim()) {
       toast.error('Please provide a reason for the refund');
       return;
     }
-
     try {
       await adminAPI.approveRefund(selectedPayment._id, {
         refundReason: refundReason.trim(),
@@ -73,7 +67,6 @@ const AdminPaymentManagement: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to process refund');
     }
   };
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Sidebar />
@@ -85,8 +78,7 @@ const AdminPaymentManagement: React.FC = () => {
               <p className="text-muted mb-0">Monitor payments, escrow funds, and process refunds</p>
             </Col>
           </Row>
-
-          {/* Escrow Funds Summary */}
+          {}
           {escrowSummary && (
             <Row className="mb-4 g-3">
               <Col md={4}>
@@ -118,8 +110,7 @@ const AdminPaymentManagement: React.FC = () => {
               </Col>
             </Row>
           )}
-
-          {/* Refunds Needed Section */}
+          {}
           {payments.filter(p => 
             (p.escrowStatus === 'held' && p.status === 'completed') ||
             (p.status === 'cancelled' && p.escrowStatus === 'released') ||
@@ -142,7 +133,6 @@ const AdminPaymentManagement: React.FC = () => {
                     ).length} Pending
                   </Badge>
                 </div>
-
                 <div style={{ overflowX: 'auto' }}>
                   <Table striped bordered hover>
                     <thead>
@@ -228,7 +218,6 @@ const AdminPaymentManagement: React.FC = () => {
               </Card.Body>
             </Card>
           )}
-
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -277,7 +266,6 @@ const AdminPaymentManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-
               {loadingPayments ? (
                 <p>Loading payments...</p>
               ) : (
@@ -366,8 +354,7 @@ const AdminPaymentManagement: React.FC = () => {
               )}
             </Card.Body>
           </Card>
-
-          {/* Refund Modal */}
+          {}
           <Modal show={showRefundModal} onHide={() => {
             setShowRefundModal(false);
             setRefundReason('');
@@ -437,6 +424,4 @@ const AdminPaymentManagement: React.FC = () => {
     </div>
   );
 };
-
 export default AdminPaymentManagement;
-

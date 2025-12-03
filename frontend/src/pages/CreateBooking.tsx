@@ -7,7 +7,6 @@ import { RootState } from '../store';
 import { trucksAPI, bookingsAPI } from '../services/api';
 import AddressPicker from '../components/AddressPicker';
 import GoogleMap from '../components/GoogleMap';
-
 const CreateBooking: React.FC = () => {
   const { truckId } = useParams();
   const navigate = useNavigate();
@@ -42,34 +41,7 @@ const CreateBooking: React.FC = () => {
   const [estimatedPrice, setEstimatedPrice] = useState(0);
   const [distance, setDistance] = useState(0);
   const geocodeTimeoutsRef = useRef<{ origin?: NodeJS.Timeout; destination?: NodeJS.Timeout }>({});
-
-  useEffect(() => {
-    if (!user) {
-      toast.error('Please login to create a booking');
-      navigate('/login');
-      return;
-    }
-    
-    if (user.role !== 'customer') {
-      toast.error('Only customers can create bookings');
-      navigate('/');
-      return;
-    }
-
-    if (truckId) {
-      fetchTruck();
-    }
-
-  }, [truckId, user, navigate, fetchTruck]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (geocodeTimeoutsRef.current.origin) clearTimeout(geocodeTimeoutsRef.current.origin);
-      if (geocodeTimeoutsRef.current.destination) clearTimeout(geocodeTimeoutsRef.current.destination);
-    };
-  }, []);
-
+  
   const fetchTruck = useCallback(async () => {
     if (!truckId) return;
     try {
@@ -87,8 +59,30 @@ const CreateBooking: React.FC = () => {
     }
   }, [truckId, navigate]);
 
+  useEffect(() => {
+    if (!user) {
+      toast.error('Please login to create a booking');
+      navigate('/login');
+      return;
+    }
+    if (user.role !== 'customer') {
+      toast.error('Only customers can create bookings');
+      navigate('/');
+      return;
+    }
+    if (truckId) {
+      fetchTruck();
+    }
+  }, [truckId, user, navigate, fetchTruck]);
+  useEffect(() => {
+    return () => {
+      if (geocodeTimeoutsRef.current.origin) clearTimeout(geocodeTimeoutsRef.current.origin);
+      if (geocodeTimeoutsRef.current.destination) clearTimeout(geocodeTimeoutsRef.current.destination);
+    };
+  }, []);
+  
   const calculateDistance = (coords1: { lat: number; lng: number }, coords2: { lat: number; lng: number }) => {
-    const R = 6371; // Earth radius in km
+    const R = 6371; 
     const dLat = (coords2.lat - coords1.lat) * Math.PI / 180;
     const dLon = (coords2.lng - coords1.lng) * Math.PI / 180;
     const a = 
@@ -98,41 +92,28 @@ const CreateBooking: React.FC = () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
-
   const handleAddressChange = async (field: 'origin' | 'destination', address: string) => {
-    // Update address immediately (don't wait for geocoding)
     setFormData(prev => ({
       ...prev,
       [field]: { ...prev[field], address }
     }));
-
-    // Clear existing timeout for this field
     if (geocodeTimeoutsRef.current[field]) {
       clearTimeout(geocodeTimeoutsRef.current[field]);
     }
-
-    // Debounce geocoding - only geocode after user stops typing for 800ms
     const timeout = setTimeout(async () => {
-      // Use OpenRouteService/OSRM geocoding via backend (open source)
       if (address.length > 5) {
         try {
           const response = await bookingsAPI.geocode(address);
           const { lat, lng } = response.data;
           const coords = { lat, lng };
-          
-          // Only update coordinates, NOT the address field (let user keep their typed text)
           setFormData(prev => ({
             ...prev,
             [field]: { 
               ...prev[field], 
               coordinates: coords
-              // Don't update address - keep what user typed
             }
           }));
-
-          // Calculate distance and price if both addresses are set
           const otherAddress = field === 'origin' ? formData.destination.address : formData.origin.address;
-          
           if (otherAddress && otherAddress.length > 5) {
             const otherCoords = field === 'origin' ? formData.destination.coordinates : formData.origin.coordinates;
             if (otherCoords && otherCoords.lat !== 0 && otherCoords.lng !== 0) {
@@ -146,8 +127,6 @@ const CreateBooking: React.FC = () => {
             }
           }
         } catch (error: any) {
-          // Silently handle geocoding errors - don't show error to user
-          // Just use fallback coordinates
           console.log('Geocoding not available, using fallback coordinates for:', address);
           const baseCoords = { lat: -1.2921, lng: 36.8219 };
           const hash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -157,62 +136,48 @@ const CreateBooking: React.FC = () => {
           };
           coords.lat = Math.max(-4.7, Math.min(5.5, coords.lat));
           coords.lng = Math.max(33.9, Math.min(41.9, coords.lng));
-          
           setFormData(prev => ({
             ...prev,
             [field]: { ...prev[field], coordinates: coords }
           }));
         }
       }
-    }, 800); // Wait 800ms after user stops typing
-
-    // Store timeout so we can clear it if user types again
+    }, 800); 
     geocodeTimeoutsRef.current[field] = timeout;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.origin.address || !formData.destination.address) {
       toast.error('Please provide both origin and destination addresses');
       return;
     }
-
     if (!formData.cargoDetails.type || !formData.cargoDetails.weight) {
       toast.error('Please provide cargo type and weight');
       return;
     }
-
     const cargoWeight = parseFloat(formData.cargoDetails.weight);
     if (isNaN(cargoWeight) || cargoWeight <= 0) {
       toast.error('Please enter a valid cargo weight');
       return;
     }
-
     if (cargoWeight > (truck?.capacity?.weight || 0)) {
       toast.error(`Cargo weight exceeds truck capacity (${truck?.capacity?.weight} tons)`);
       return;
     }
-
-    // Validate coordinates - ensure they're set (even if approximate)
     if (!formData.origin.coordinates || (formData.origin.coordinates.lat === 0 && formData.origin.coordinates.lng === 0)) {
-      // Generate coordinates if missing
       const hash = formData.origin.address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       formData.origin.coordinates = {
         lat: -1.2921 + (hash % 200) / 1000 - 0.1,
         lng: 36.8219 + (hash % 200) / 1000 - 0.1
       };
     }
-
     if (!formData.destination.coordinates || (formData.destination.coordinates.lat === 0 && formData.destination.coordinates.lng === 0)) {
-      // Generate coordinates if missing
       const hash = formData.destination.address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       formData.destination.coordinates = {
         lat: -1.2921 + (hash % 200) / 1000 - 0.1,
         lng: 36.8219 + (hash % 200) / 1000 - 0.1
       };
     }
-
     setSubmitting(true);
     try {
       const bookingData = {
@@ -240,11 +205,8 @@ const CreateBooking: React.FC = () => {
         specialInstructions: formData.specialInstructions?.trim() || undefined,
         paymentMethod: formData.paymentMethod
       };
-
       console.log('Creating booking with data:', bookingData);
       const response = await bookingsAPI.create(bookingData);
-      
-      // Check if truck is on another job
       if (response.data.warning && response.data.warning.onAnotherJob) {
         toast.warning(response.data.warning.message, {
           autoClose: 8000,
@@ -253,7 +215,6 @@ const CreateBooking: React.FC = () => {
       } else {
         toast.success('Booking created successfully! You can edit it before the trucker confirms.');
       }
-      
       navigate(`/booking/${response.data._id}`);
     } catch (error: any) {
       console.error('Booking creation error:', error);
@@ -265,7 +226,6 @@ const CreateBooking: React.FC = () => {
       setSubmitting(false);
     }
   };
-
   if (loading) {
     return (
       <Container className="my-5">
@@ -277,7 +237,6 @@ const CreateBooking: React.FC = () => {
       </Container>
     );
   }
-
   if (!truck) {
     return (
       <Container className="my-5">
@@ -285,7 +244,6 @@ const CreateBooking: React.FC = () => {
       </Container>
     );
   }
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Container className="py-5">
@@ -294,7 +252,6 @@ const CreateBooking: React.FC = () => {
             <Card className="shadow-sm mb-4">
               <Card.Body>
                 <h2 className="mb-4">Create Booking</h2>
-                
                 <div className="mb-4 p-3" style={{ background: '#f8f9fa', borderRadius: '10px' }}>
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h5 className="mb-0">Truck Details</h5>
@@ -309,7 +266,7 @@ const CreateBooking: React.FC = () => {
                         alt={truck.type}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1601581875035-1c5fbc5d0c0b?w=800&q=80';
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                         }}
                       />
                     </div>
@@ -349,7 +306,6 @@ const CreateBooking: React.FC = () => {
                     </Col>
                   </Row>
                 </div>
-
                 <Form onSubmit={handleSubmit}>
                   <h5 className="mb-3">Origin Details</h5>
                   <Row className="mb-3">
@@ -364,7 +320,6 @@ const CreateBooking: React.FC = () => {
                               ...prev,
                               origin: { ...prev.origin, address, coordinates }
                             }));
-                            // Auto-calculate distance if destination is set
                             if (formData.destination.coordinates.lat !== 0 && formData.destination.coordinates.lng !== 0) {
                               const dist = calculateDistance(coordinates, formData.destination.coordinates);
                               setDistance(dist);
@@ -418,9 +373,7 @@ const CreateBooking: React.FC = () => {
                       </Form.Group>
                     </Col>
                   </Row>
-
                   <hr className="my-4" />
-
                   <h5 className="mb-3">Destination Details</h5>
                   <Row className="mb-3">
                     <Col md={12}>
@@ -434,7 +387,6 @@ const CreateBooking: React.FC = () => {
                               ...prev,
                               destination: { ...prev.destination, address, coordinates }
                             }));
-                            // Auto-calculate distance if origin is set
                             if (formData.origin.coordinates.lat !== 0 && formData.origin.coordinates.lng !== 0) {
                               const dist = calculateDistance(formData.origin.coordinates, coordinates);
                               setDistance(dist);
@@ -488,9 +440,7 @@ const CreateBooking: React.FC = () => {
                       </Form.Group>
                     </Col>
                   </Row>
-
                   <hr className="my-4" />
-
                   <h5 className="mb-3">Cargo Details</h5>
                   <Row className="mb-3">
                     <Col md={6}>
@@ -586,7 +536,6 @@ const CreateBooking: React.FC = () => {
                           onChange={async (e) => {
                             const files = (e.target as HTMLInputElement).files;
                             if (!files || files.length === 0) return;
-                            
                             const toBase64 = (file: File) =>
                               new Promise<string>((resolve, reject) => {
                                 const reader = new FileReader();
@@ -594,7 +543,6 @@ const CreateBooking: React.FC = () => {
                                 reader.onload = () => resolve(reader.result as string);
                                 reader.onerror = (error) => reject(error);
                               });
-
                             try {
                               const converted = await Promise.all(Array.from(files).map((file) => toBase64(file)));
                               setFormData(prev => ({
@@ -657,9 +605,7 @@ const CreateBooking: React.FC = () => {
                       </Form.Group>
                     </Col>
                   </Row>
-
                   <hr className="my-4" />
-
                   <Form.Group className="mb-4">
                     <Form.Label>Special Instructions (Optional)</Form.Label>
                     <Form.Control
@@ -673,9 +619,7 @@ const CreateBooking: React.FC = () => {
                       }))}
                     />
                   </Form.Group>
-
                   <hr className="my-4" />
-
                   <h5 className="mb-3">Payment Method</h5>
                   <Form.Group className="mb-4">
                     <Form.Label>Select Payment Method *</Form.Label>
@@ -718,7 +662,6 @@ const CreateBooking: React.FC = () => {
                       </Alert>
                     )}
                   </Form.Group>
-
                   <div className="d-flex gap-3">
                     <Button variant="secondary" onClick={() => navigate(-1)}>
                       Cancel
@@ -731,19 +674,16 @@ const CreateBooking: React.FC = () => {
               </Card.Body>
             </Card>
           </Col>
-
           <Col md={4}>
             <Card className="shadow-sm sticky-top" style={{ top: '20px' }}>
               <Card.Body>
                 <h5 className="mb-3">Booking Summary</h5>
-                
                 {distance > 0 && (
                   <div className="mb-3 p-3" style={{ background: '#e7f3ff', borderRadius: '8px' }}>
                     <p className="mb-1"><strong>Estimated Distance:</strong></p>
                     <h4 className="mb-0">{distance.toFixed(1)} km</h4>
                   </div>
                 )}
-
                 {estimatedPrice > 0 && (
                   <div className="mb-3 p-3" style={{ background: '#f0f9ff', borderRadius: '8px' }}>
                     <p className="mb-1"><strong>Estimated Price:</strong></p>
@@ -756,7 +696,6 @@ const CreateBooking: React.FC = () => {
                     </small>
                   </div>
                 )}
-
                 <div className="mt-4">
                   <h6 className="mb-2">What happens next?</h6>
                   <ul className="small text-muted" style={{ paddingLeft: '20px' }}>
@@ -774,6 +713,4 @@ const CreateBooking: React.FC = () => {
     </div>
   );
 };
-
 export default CreateBooking;
-

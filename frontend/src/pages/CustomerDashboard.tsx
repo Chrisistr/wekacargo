@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, alertsAPI, authAPI } from '../services/api';
 import { logout } from '../store/authSlice';
-
 interface Booking {
   _id: string;
   origin: { address: string };
@@ -16,7 +15,6 @@ interface Booking {
   status: string;
   createdAt: string;
 }
-
 const CustomerDashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
@@ -27,7 +25,6 @@ const CustomerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   const navigate = useNavigate();
   const location = useLocation();
-
   useEffect(() => {
     if (location.pathname === '/expenditure') {
       setActiveTab('expenditure');
@@ -43,7 +40,6 @@ const CustomerDashboard: React.FC = () => {
       setActiveTab('home');
     }
   }, [location]);
-
   const fetchBookings = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -58,7 +54,6 @@ const CustomerDashboard: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -66,7 +61,6 @@ const CustomerDashboard: React.FC = () => {
     }
     fetchBookings();
   }, [user, fetchBookings]);
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       pending: 'warning',
@@ -77,17 +71,13 @@ const CustomerDashboard: React.FC = () => {
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
-
   const totalSpend = bookings.reduce(
     (sum, b) => sum + (b.pricing?.estimatedAmount || 0),
     0
   );
-
   const activeCount = bookings.filter(b =>
     ['confirmed', 'in-transit'].includes(b.status)
   ).length;
-
-
   const handleAlertSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -105,7 +95,6 @@ const CustomerDashboard: React.FC = () => {
       toast.error('Failed to send alert');
     }
   };
-
   const handleLogout = async () => {
     try {
       if (user) {
@@ -118,7 +107,6 @@ const CustomerDashboard: React.FC = () => {
       navigate('/');
     }
   };
-
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === 'expenditure') {
@@ -133,15 +121,13 @@ const CustomerDashboard: React.FC = () => {
       navigate('/dashboard/customer');
     }
   };
-
   if (location.pathname === '/expenditure' || location.pathname === '/home' || location.pathname === '/bookings' || location.pathname === '/raise-issue') {
-    return null; // These pages handle their own rendering
+    return null; 
   }
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Container className="py-4">
-        {/* Navigation Menu */}
+        {}
         <Card className="mb-4" style={{ border: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
           <Card.Body className="p-3">
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -224,7 +210,6 @@ const CustomerDashboard: React.FC = () => {
             </div>
           </Card.Body>
         </Card>
-
         <Row className="mb-4 g-3">
           <Col md={4}>
             <Card className="dashboard-card" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
@@ -266,8 +251,7 @@ const CustomerDashboard: React.FC = () => {
             </Card>
           </Col>
         </Row>
-
-        {/* Main Content Based on Active Tab */}
+        {}
         {activeTab === 'home' && (
           <>
             <Row className="mb-4 g-3">
@@ -425,7 +409,6 @@ const CustomerDashboard: React.FC = () => {
             </Row>
           </>
         )}
-
         {activeTab === 'bookings' && (
           <Row>
             <Col>
@@ -510,7 +493,6 @@ const CustomerDashboard: React.FC = () => {
             </Col>
           </Row>
         )}
-
         {activeTab === 'raise-issue' && (
           <Row>
             <Col md={8}>
@@ -559,6 +541,4 @@ const CustomerDashboard: React.FC = () => {
     </div>
   );
 };
-
 export default CustomerDashboard;
-

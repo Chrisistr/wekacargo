@@ -6,7 +6,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { bookingsAPI, paymentsAPI, ratingsAPI } from '../services/api';
 import GoogleMap from '../components/GoogleMap';
-
 const BookingDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -41,7 +40,6 @@ const BookingDetails: React.FC = () => {
     rating: 0,
     review: ''
   });
-
   const fetchBooking = useCallback(async (bookingId: string) => {
     try {
       const response = await bookingsAPI.getById(bookingId);
@@ -52,33 +50,24 @@ const BookingDetails: React.FC = () => {
                           error.message || 
                           'Failed to fetch booking details';
       toast.error(errorMessage);
-      
-      // Set booking to null so the "not found" message shows
       setBooking(null);
-      
       if (error.response?.status === 401) {
-        // Not authenticated
         navigate('/login');
       } else if (error.response?.status === 403) {
-        // Not authorized - show message but don't navigate away
         console.log('User not authorized to view this booking');
       } else if (error.response?.status === 404) {
-        // Booking not found
         console.log('Booking not found');
       }
     } finally {
       setLoading(false);
     }
   }, [navigate]);
-
   const checkReviewStatus = useCallback(async () => {
     if (!booking || !user) return;
     try {
       const response = await ratingsAPI.checkReview(booking._id);
       setHasReviewed(response.data.hasReviewed);
-      // Show review modal if booking is completed and user hasn't reviewed yet
       if (booking.status === 'completed' && !response.data.hasReviewed) {
-        // Show modal after a short delay to let user see the completion status
         setTimeout(() => {
           setShowReviewModal(true);
         }, 2000);
@@ -87,76 +76,55 @@ const BookingDetails: React.FC = () => {
       console.error('Error checking review status:', error);
     }
   }, [booking, user]);
-
   useEffect(() => {
     if (id) {
       fetchBooking(id);
     }
   }, [id, fetchBooking]);
-
   useEffect(() => {
     if (booking && user && booking.status === 'completed' && user.role === 'customer') {
       checkReviewStatus();
     }
   }, [booking, user, checkReviewStatus]);
-
-
   const handlePayment = async () => {
     if (!phoneNumber || phoneNumber.trim().length < 9) {
       toast.error('Please enter a valid phone number (e.g., 0712345678 or 254712345678)');
       return;
     }
-    
     setProcessingPayment(true);
     try {
       if (!booking) return;
-      
-      // Format phone number (ensure it starts with 254 for Kenya)
-      let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove non-digits
+      let formattedPhone = phoneNumber.replace(/\D/g, ''); 
       if (formattedPhone.startsWith('0')) {
         formattedPhone = '254' + formattedPhone.substring(1);
       } else if (!formattedPhone.startsWith('254')) {
         formattedPhone = '254' + formattedPhone;
       }
-      
       const response = await paymentsAPI.initiate({
         bookingId: booking._id,
         phoneNumber: formattedPhone
       });
-
-      // Show success message with customer message from M-Pesa if available
       const successMessage = response.data.customerMessage || 
                             response.data.message || 
                             'Payment initiated. Please check your phone for the M-Pesa prompt.';
-      
       toast.success(successMessage, {
         autoClose: 5000
       });
-      
-      // Don't close modal immediately - let user see success message
-      // They can close it manually or it will close when booking status updates
       setPhoneNumber('');
       fetchBooking(booking._id);
-      
-      // Close modal after a short delay to show success
       setTimeout(() => {
         setShowPaymentModal(false);
       }, 2000);
     } catch (error: any) {
       console.error('Payment error:', error);
-      
-      // Show detailed error message
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.errorMessage ||
                           error.response?.data?.CustomerMessage ||
                           error.message || 
                           'Payment failed. Please check your M-Pesa credentials and try again.';
-      
       toast.error(errorMessage, {
         autoClose: 7000
       });
-      
-      // Log additional details for debugging
       if (error.response?.data?.details) {
         console.error('M-Pesa Error Details:', error.response.data.details);
       }
@@ -164,14 +132,12 @@ const BookingDetails: React.FC = () => {
       setProcessingPayment(false);
     }
   };
-
   const handleStatusUpdate = async (newStatus: string) => {
     setUpdatingStatus(true);
     try {
       await bookingsAPI.update(booking._id, { status: newStatus });
       toast.success(`Booking status updated to ${newStatus}`);
       fetchBooking(booking._id);
-      // If status is completed and user is customer, check for review
       if (newStatus === 'completed' && user?.role === 'customer') {
         setTimeout(() => {
           checkReviewStatus();
@@ -183,25 +149,21 @@ const BookingDetails: React.FC = () => {
       setUpdatingStatus(false);
     }
   };
-
   const handleLocationUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!locationForm.lat || !locationForm.lng) {
       toast.error('Please enter latitude and longitude');
       return;
     }
-
     setUpdatingLocation(true);
     try {
       const updateData: any = {
         lat: parseFloat(locationForm.lat),
         lng: parseFloat(locationForm.lng)
       };
-
       if (locationForm.estimatedArrival) {
         updateData.estimatedArrival = locationForm.estimatedArrival;
       }
-
       await bookingsAPI.updateTracking(booking._id, updateData);
       toast.success('Location updated successfully! Customer has been notified.');
       setShowLocationModal(false);
@@ -213,14 +175,12 @@ const BookingDetails: React.FC = () => {
       setUpdatingLocation(false);
     }
   };
-
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!booking || reviewForm.rating === 0) {
       toast.error('Please select a rating');
       return;
     }
-
     setSubmittingReview(true);
     try {
       await ratingsAPI.submit({
@@ -239,13 +199,11 @@ const BookingDetails: React.FC = () => {
       setSubmittingReview(false);
     }
   };
-
   const handleCancel = async () => {
     if (!cancelReason.trim()) {
       toast.error('Please provide a reason for cancellation');
       return;
     }
-
     setUpdatingStatus(true);
     try {
       await bookingsAPI.update(booking._id, { 
@@ -262,7 +220,6 @@ const BookingDetails: React.FC = () => {
       setUpdatingStatus(false);
     }
   };
-
   const openEditModal = () => {
     if (booking) {
       setEditForm({
@@ -289,23 +246,18 @@ const BookingDetails: React.FC = () => {
       setShowEditModal(true);
     }
   };
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!booking) return;
-
     setEditing(true);
     try {
       const editData: any = {};
-
       if (editForm.origin.address) editData.origin = { address: editForm.origin.address };
       if (editForm.origin.contact) editData.origin = { ...editData.origin, contact: editForm.origin.contact };
       if (editForm.origin.pickupTime) editData.origin = { ...editData.origin, pickupTime: editForm.origin.pickupTime };
-
       if (editForm.destination.address) editData.destination = { address: editForm.destination.address };
       if (editForm.destination.contact) editData.destination = { ...editData.destination, contact: editForm.destination.contact };
       if (editForm.destination.dropoffTime) editData.destination = { ...editData.destination, dropoffTime: editForm.destination.dropoffTime };
-
       if (editForm.cargoDetails.type || editForm.cargoDetails.weight) {
         editData.cargoDetails = {};
         if (editForm.cargoDetails.type) editData.cargoDetails.type = editForm.cargoDetails.type;
@@ -316,11 +268,9 @@ const BookingDetails: React.FC = () => {
           editData.cargoDetails.pictures = editForm.cargoDetails.pictures;
         }
       }
-
       if (editForm.specialInstructions !== undefined) {
         editData.specialInstructions = editForm.specialInstructions;
       }
-
       await bookingsAPI.edit(booking._id, editData);
       toast.success('Booking updated successfully! The trucker has been notified.');
       setShowEditModal(false);
@@ -331,7 +281,6 @@ const BookingDetails: React.FC = () => {
       setEditing(false);
     }
   };
-
   const getStatusBadge = (status: string) => {
     const variants: any = {
       pending: { bg: 'warning', text: 'Pending' },
@@ -343,15 +292,12 @@ const BookingDetails: React.FC = () => {
     const variant = variants[status] || { bg: 'secondary', text: status };
     return <Badge bg={variant.bg}>{variant.text}</Badge>;
   };
-
   const getStatusTimeline = () => {
     const statuses = ['pending', 'confirmed', 'in-transit', 'completed'];
     const currentIndex = statuses.indexOf(booking.status);
-    
     return statuses.map((status, index) => {
       const isActive = index <= currentIndex;
       const isCurrent = index === currentIndex;
-      
       return (
         <div key={status} className="d-flex align-items-center mb-3">
           <div 
@@ -382,7 +328,6 @@ const BookingDetails: React.FC = () => {
       );
     });
   };
-
   if (loading) {
     return (
       <Container className="my-5">
@@ -394,7 +339,6 @@ const BookingDetails: React.FC = () => {
       </Container>
     );
   }
-
   if (!booking && !loading) {
     return (
       <Container className="my-5">
@@ -415,18 +359,15 @@ const BookingDetails: React.FC = () => {
       </Container>
     );
   }
-
   if (!booking) {
-    return null; // Still loading
+    return null; 
   }
-
   const isCustomer = user?.role === 'customer';
   const isTrucker = user?.role === 'trucker';
   const canUpdateStatus = isTrucker && ['pending', 'confirmed', 'in-transit'].includes(booking.status);
   const canCancel = (isCustomer && booking.status === 'pending') || 
                     (isTrucker && ['pending', 'confirmed'].includes(booking.status));
   const canEdit = isCustomer && booking.status === 'pending';
-
   return (
     <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
       <Container className="py-5">
@@ -445,7 +386,6 @@ const BookingDetails: React.FC = () => {
                     )}
                   </div>
                 </div>
-
                 <Row className="mb-4">
                   <Col md={6}>
                     <Card className="mb-3" style={{ background: '#f8f9fa', border: 'none' }}>
@@ -468,8 +408,7 @@ const BookingDetails: React.FC = () => {
                       <Card.Body>
                         <h6 className="text-muted mb-2">DESTINATION</h6>
                         <p className="mb-1"><strong>{booking.destination.address}</strong></p>
-                        
-                        {/* Route Map */}
+                        {}
                         {booking.origin?.coordinates && booking.destination?.coordinates && (
                           <div className="mt-4">
                             <h6 className="mb-2">Route Map</h6>
@@ -493,7 +432,6 @@ const BookingDetails: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
-
                 {booking.cargoDetails && (
                   <div className="mb-4">
                     <h5 className="mb-3">Cargo Information</h5>
@@ -536,7 +474,6 @@ const BookingDetails: React.FC = () => {
                                   cursor: 'pointer'
                                 }}
                                 onClick={() => {
-                                  // Open image in new window for full view
                                   window.open(pic, '_blank');
                                 }}
                                 onError={(e) => {
@@ -553,13 +490,11 @@ const BookingDetails: React.FC = () => {
                     )}
                   </div>
                 )}
-
                 {booking.specialInstructions && (
                   <Alert variant="info" className="mb-4">
                     <strong>Special Instructions:</strong> {booking.specialInstructions}
                   </Alert>
                 )}
-
                 {booking.status === 'completed' && isCustomer && !hasReviewed && (
                   <Alert variant="success" className="mb-4">
                     <Alert.Heading>Delivery Completed!</Alert.Heading>
@@ -569,13 +504,11 @@ const BookingDetails: React.FC = () => {
                     </Button>
                   </Alert>
                 )}
-
                 {booking.status === 'completed' && isCustomer && hasReviewed && (
                   <Alert variant="success" className="mb-4">
                     <strong>Thank you for your review!</strong> Your feedback helps us improve our service.
                   </Alert>
                 )}
-
                 <div className="mb-4">
                   <h5 className="mb-3">Pricing</h5>
                   <Row>
@@ -590,7 +523,6 @@ const BookingDetails: React.FC = () => {
                     </Col>
                   </Row>
                 </div>
-
                 {canUpdateStatus && (
                   <div className="mb-4 p-3" style={{ background: '#e7f3ff', borderRadius: '10px' }}>
                     <h5 className="mb-3">Update Booking Status</h5>
@@ -618,7 +550,6 @@ const BookingDetails: React.FC = () => {
                           <Button 
                             variant="info" 
                             onClick={() => {
-                              // Get current location from browser if available
                               if (navigator.geolocation) {
                                 navigator.geolocation.getCurrentPosition(
                                   (position) => {
@@ -654,8 +585,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Payment Information Section */}
+                {}
                 <Card className="mb-4">
                   <Card.Body>
                     <h5 className="mb-3">Payment Information</h5>
@@ -678,8 +608,7 @@ const BookingDetails: React.FC = () => {
                     </p>
                   </Card.Body>
                 </Card>
-
-                {/* Payment Action Section */}
+                {}
                 {isCustomer && booking.payment.status !== 'paid' && booking.payment.status !== 'completed' && (booking.status === 'confirmed' || booking.status === 'completed') && (
                   <Card className="mb-4" style={{ 
                     background: booking.payment?.method === 'cash' ? '#fff3cd' : '#fff3cd', 
@@ -687,7 +616,6 @@ const BookingDetails: React.FC = () => {
                   }}>
                     <Card.Body>
                       <h5 className="mb-3">Complete Payment</h5>
-                      
                       {booking.payment?.method === 'cash' ? (
                         <Alert variant="warning" className="mb-0">
                           <strong>Cash Payment Reminder:</strong> Please have the exact amount (KES {booking.pricing.estimatedAmount.toLocaleString()}) ready when the delivery arrives. 
@@ -724,14 +652,12 @@ const BookingDetails: React.FC = () => {
                     </Card.Body>
                   </Card>
                 )}
-
-                {/* Cash Payment Reminder (shown throughout booking) */}
+                {}
                 {isCustomer && booking.payment?.method === 'cash' && booking.status !== 'completed' && booking.status !== 'cancelled' && (
                   <Alert variant="info" className="mb-4">
                     <strong>Cash Payment Reminder:</strong> Please ensure you have KES {booking.pricing.estimatedAmount.toLocaleString()} ready in cash when the trucker arrives for delivery.
                   </Alert>
                 )}
-
                 {canCancel && (
                   <Button 
                     variant="outline-danger" 
@@ -741,7 +667,6 @@ const BookingDetails: React.FC = () => {
                     Cancel Booking
                   </Button>
                 )}
-
                 {booking.status === 'in-transit' && (
                   <Button 
                     variant="info" 
@@ -754,7 +679,6 @@ const BookingDetails: React.FC = () => {
               </Card.Body>
             </Card>
           </Col>
-
           <Col md={4}>
             <Card className="shadow-sm mb-4">
               <Card.Body>
@@ -762,7 +686,6 @@ const BookingDetails: React.FC = () => {
                 {getStatusTimeline()}
               </Card.Body>
             </Card>
-
             <Card className="shadow-sm mb-4">
               <Card.Body>
                 <h5 className="mb-3">
@@ -839,7 +762,6 @@ const BookingDetails: React.FC = () => {
                 )}
               </Card.Body>
             </Card>
-
             {booking.truck && (
               <Card className="shadow-sm">
                 <Card.Body>
@@ -852,7 +774,6 @@ const BookingDetails: React.FC = () => {
             )}
           </Col>
         </Row>
-
         <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Cancel Booking</Modal.Title>
@@ -881,8 +802,7 @@ const BookingDetails: React.FC = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
-        {/* Edit Booking Modal */}
+        {}
         <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
           <Form onSubmit={handleEditSubmit}>
             <Modal.Header closeButton>
@@ -892,7 +812,6 @@ const BookingDetails: React.FC = () => {
               <Alert variant="info" className="mb-3">
                 You can only edit bookings that are pending. Once the trucker confirms, changes require communication.
               </Alert>
-
               <h6 className="mb-3">Origin Details</h6>
               <Form.Group className="mb-3">
                 <Form.Label>Pickup Address</Form.Label>
@@ -934,9 +853,7 @@ const BookingDetails: React.FC = () => {
                   </Form.Group>
                 </Col>
               </Row>
-
               <hr />
-
               <h6 className="mb-3">Destination Details</h6>
               <Form.Group className="mb-3">
                 <Form.Label>Delivery Address</Form.Label>
@@ -978,9 +895,7 @@ const BookingDetails: React.FC = () => {
                   </Form.Group>
                 </Col>
               </Row>
-
               <hr />
-
               <h6 className="mb-3">Cargo Details</h6>
               <Row>
                 <Col md={6}>
@@ -1041,108 +956,7 @@ const BookingDetails: React.FC = () => {
                 </Form.Text>
                 <Form.Control
                   type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={async (e) => {
-                    const files = (e.target as HTMLInputElement).files;
-                    if (!files || files.length === 0) return;
-                    
-                    const toBase64 = (file: File) =>
-                      new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.onerror = (error) => reject(error);
-                      });
-
-                    try {
-                      const converted = await Promise.all(Array.from(files).map((file) => toBase64(file)));
-                      setEditForm(prev => ({
-                        ...prev,
-                        cargoDetails: { 
-                          ...prev.cargoDetails, 
-                          pictures: [...(prev.cargoDetails.pictures || []), ...converted]
-                        }
-                      }));
-                      toast.success(`${converted.length} picture(s) uploaded`);
-                    } catch (error) {
-                      toast.error('Failed to upload pictures');
-                    }
-                  }}
-                />
-                {editForm.cargoDetails.pictures && editForm.cargoDetails.pictures.length > 0 && (
-                  <div className="d-flex flex-wrap gap-2 mt-2">
-                    {editForm.cargoDetails.pictures.map((pic, idx) => (
-                      <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
-                        <img 
-                          src={pic} 
-                          alt={`Cargo ${idx + 1}`}
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            objectFit: 'cover', 
-                            borderRadius: '8px',
-                            border: '1px solid #dee2e6'
-                          }}
-                        />
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          style={{
-                            position: 'absolute',
-                            top: '-5px',
-                            right: '-5px',
-                            borderRadius: '50%',
-                            width: '24px',
-                            height: '24px',
-                            padding: 0,
-                            fontSize: '12px'
-                          }}
-                          onClick={() => {
-                            setEditForm(prev => ({
-                              ...prev,
-                              cargoDetails: {
-                                ...prev.cargoDetails,
-                                pictures: prev.cargoDetails.pictures.filter((_, i) => i !== idx)
-                              }
-                            }));
-                          }}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Form.Group>
-
-              <hr />
-
-              <Form.Group className="mb-3">
-                <Form.Label>Special Instructions</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={editForm.specialInstructions}
-                  onChange={(e) => setEditForm(prev => ({
-                    ...prev,
-                    specialInstructions: e.target.value
-                  }))}
-                />
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" type="submit" disabled={editing}>
-                {editing ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        {/* Review Modal */}
+                  accept="image}
         <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Rate Your Delivery Experience</Modal.Title>
@@ -1153,7 +967,6 @@ const BookingDetails: React.FC = () => {
                 <strong>How was your delivery experience?</strong>
                 <p className="mb-0 mt-2">Your feedback helps us improve our service and helps other customers make informed decisions.</p>
               </Alert>
-
               <Form.Group className="mb-4">
                 <Form.Label>
                   <strong>Overall Rating *</strong>
@@ -1187,7 +1000,6 @@ const BookingDetails: React.FC = () => {
                   )}
                 </div>
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>
                   <strong>Write a Review (Optional)</strong>
@@ -1204,7 +1016,6 @@ const BookingDetails: React.FC = () => {
                   {reviewForm.review.length}/500 characters
                 </Form.Text>
               </Form.Group>
-
               {booking?.trucker && (
                 <div className="mb-3 p-3" style={{ background: '#f8f9fa', borderRadius: '8px' }}>
                   <p className="mb-1"><strong>You're reviewing:</strong></p>
@@ -1225,8 +1036,7 @@ const BookingDetails: React.FC = () => {
             </Modal.Footer>
           </Form>
         </Modal>
-
-        {/* Location Update Modal (for truckers) */}
+        {}
         <Modal show={showLocationModal} onHide={() => {
           if (!updatingLocation) {
             setShowLocationModal(false);
@@ -1295,8 +1105,7 @@ const BookingDetails: React.FC = () => {
             </Modal.Footer>
           </Form>
         </Modal>
-
-        {/* Payment Modal */}
+        {}
         <Modal show={showPaymentModal} onHide={() => {
           if (!processingPayment) {
             setShowPaymentModal(false);
@@ -1366,5 +1175,4 @@ const BookingDetails: React.FC = () => {
     </div>
   );
 };
-
 export default BookingDetails;
