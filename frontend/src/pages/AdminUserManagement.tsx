@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'react-toastify';
 import { adminAPI, notificationsAPI } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 const AdminUserManagement: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);

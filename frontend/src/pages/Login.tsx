@@ -82,6 +82,7 @@ const Login: React.FC = () => {
     document.head.appendChild(script);
     return () => {
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
   const initializeGoogleSignIn = () => {
     if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {

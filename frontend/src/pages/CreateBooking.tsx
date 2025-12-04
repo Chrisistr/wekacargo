@@ -76,7 +76,9 @@ const CreateBooking: React.FC = () => {
   }, [truckId, user, navigate, fetchTruck]);
   useEffect(() => {
     return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (geocodeTimeoutsRef.current.origin) clearTimeout(geocodeTimeoutsRef.current.origin);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (geocodeTimeoutsRef.current.destination) clearTimeout(geocodeTimeoutsRef.current.destination);
     };
   }, []);

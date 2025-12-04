@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { bookingsAPI } from '../services/api';
-import { logout } from '../store/authSlice';
-import { authAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
 interface Booking {
   _id: string;
@@ -19,7 +17,6 @@ interface Booking {
 }
 const Expenditure: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);

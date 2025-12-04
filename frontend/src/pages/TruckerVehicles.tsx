@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert, Image } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Modal, Form, Image } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'react-toastify';
@@ -118,46 +118,6 @@ const TruckerVehicles: React.FC = () => {
     const updatedPhotos = [...editForm.photos];
     updatedPhotos[index] = value;
     setEditForm({ ...editForm, photos: updatedPhotos });
-  };
-  const addEditPhotoField = () => {
-    setEditForm({ ...editForm, photos: [...editForm.photos, ''] });
-  };
-  const handleEditPhotoUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const toBase64 = (file: File) =>
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    const converted = await Promise.all(Array.from(files).map((file) => toBase64(file)));
-    setEditForm((prev) => ({
-      ...prev,
-      photos: [...prev.photos.filter((url) => url.trim() !== ''), ...converted]
-    }));
-  };
-  const handleEditProofOfOwnershipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    const toBase64 = (file: File) =>
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    try {
-      const base64 = await toBase64(files[0]);
-      setEditForm((prev) => ({ ...prev, proofOfOwnership: base64 }));
-      if (files.length > 1) {
-        toast.info(`${files.length} files selected. The first file has been uploaded. Additional files can be uploaded separately.`);
-      } else {
-        toast.success('Document uploaded successfully');
-      }
-    } catch (error) {
-      toast.error('Failed to upload document(s)');
-    }
   };
   const handleSubmitRemoval = async (e: React.FormEvent) => {
     e.preventDefault();

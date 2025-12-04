@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -8,12 +8,7 @@ const TrackingPage: React.FC = () => {
   const { id } = useParams();
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (id) {
-      fetchBooking(id);
-    }
-  }, [id]);
-  const fetchBooking = async (bookingId: string) => {
+  const fetchBooking = useCallback(async (bookingId: string) => {
     try {
       const response = await bookingsAPI.getById(bookingId);
       setBooking(response.data);
@@ -22,7 +17,12 @@ const TrackingPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  useEffect(() => {
+    if (id) {
+      fetchBooking(id);
+    }
+  }, [id, fetchBooking]);
   useEffect(() => {
     if (!id || !booking || booking.status !== 'in-transit') {
       return;
@@ -33,7 +33,7 @@ const TrackingPage: React.FC = () => {
       }
     }, 30000); 
     return () => clearInterval(interval);
-  }, [id, booking?.status]);
+  }, [id, booking, fetchBooking]);
   if (loading) {
     return (
       <Container className="my-5">
