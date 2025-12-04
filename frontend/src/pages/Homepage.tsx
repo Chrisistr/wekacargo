@@ -121,13 +121,21 @@ const Homepage: React.FC = () => {
             <Col md={5} className="hero-image-col">
               {!isAuthenticated ? (
                 <div className="hero-image-container" style={{ overflow: 'hidden', width: '100%', height: '400px' }}>
-                  <img 
-                    src="https://via.placeholder.com/800x400?text=Truck+Image"
-                    alt="Truck being loaded with cargo" 
+                  <img
+                    src="https://img.freepik.com/premium-photo/red-semi-truck-with-lights-it-is-traveling-down-snowy-road-ai-photo_1185498-36829.jpg?semt=ais_hybrid&w=740&q=80"
+                    alt="Long‑haul truck driving along a highway in Kenya"
                     className="hero-truck-image"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', display: 'block' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                      borderRadius: '10px',
+                      display: 'block'
+                    }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                      (e.target as HTMLImageElement).src =
+                        'https://via.placeholder.com/800x400?text=WekaCargo+Logistics';
                     }}
                   />
                 </div>
@@ -236,17 +244,24 @@ const Homepage: React.FC = () => {
                     className="feature-card fade-in"
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[0] = el; }}
                   >
-                    <div className="feature-image-wrapper">
-                  <img 
-                    src="https://via.placeholder.com/800x400?text=Truck+Image"
-                    alt="Nationwide Coverage" 
-                    className="feature-image"
-                    style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
-                    }}
-                  />
-                    </div>
+                  <div className="feature-image-wrapper">
+                    <img
+                      src="https://cms.eichertrucksandbuses.com/uploads/banner/45/4acbc2537ff88774d56f6567debc5336.png"
+                      alt="Network of long‑haul trucks across Kenya"
+                      className="feature-image"
+                      style={{
+                        width: '100%',
+                        height: '250px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/800x400?text=Nationwide+Coverage';
+                      }}
+                    />
+                  </div>
                     <h4 className="mt-3">Nationwide Coverage</h4>
                     <p>Our fleet of lorries and trucks connects every corner of Kenya - from Nairobi to Mombasa, Kisumu to Eldoret, and all major transport corridors.</p>
                   </div>
@@ -256,17 +271,24 @@ const Homepage: React.FC = () => {
                     className="feature-card fade-in"
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[1] = el; }}
                   >
-                    <div className="feature-image-wrapper">
-                  <img 
-                    src="https://via.placeholder.com/800x400?text=Truck+Image"
-                    alt="Verified Partners" 
-                    className="feature-image"
-                    style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
-                    }}
-                  />
-                    </div>
+                  <div className="feature-image-wrapper">
+                    <img
+                      src="https://www.shutterstock.com/image-photo/semi-trailer-trucks-parking-sunset-260nw-1819687022.jpg"
+                      alt="Row of verified cargo trucks parked at sunset"
+                      className="feature-image"
+                      style={{
+                        width: '100%',
+                        height: '250px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/800x400?text=Verified+Partners';
+                      }}
+                    />
+                  </div>
                     <h4 className="mt-3">Verified Partners</h4>
                     <p>Every trucker and their vehicles are verified - from driver licenses to truck registration, ensuring safe and reliable cargo transport across Kenya.</p>
                   </div>
@@ -276,17 +298,24 @@ const Homepage: React.FC = () => {
                     className="feature-card fade-in"
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[2] = el; }}
                   >
-                    <div className="feature-image-wrapper">
-                  <img 
-                    src="https://via.placeholder.com/800x400?text=Truck+Image"
-                    alt="Money currency notes and coins" 
-                    className="feature-image"
-                    style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
-                    }}
-                  />
-                    </div>
+                  <div className="feature-image-wrapper">
+                    <img
+                      src="https://www.shutterstock.com/image-photo/semi-trailer-trucks-parking-sunset-260nw-1819687022.jpg"
+                      alt="Cargo trucks ready to move freight efficiently"
+                      className="feature-image"
+                      style={{
+                        width: '100%',
+                        height: '250px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/800x400?text=Transparent+Pricing';
+                      }}
+                    />
+                  </div>
                     <h4 className="mt-3">Transparent Pricing</h4>
                     <p>See upfront rates per kilometer for every lorry, truck, and flatbed. No hidden fees - just clear pricing from pickup to delivery.</p>
                   </div>
@@ -303,13 +332,14 @@ const Homepage: React.FC = () => {
                     style={{ overflow: 'hidden', borderRadius: '20px' }}
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[3] = el; }}
                   >
-                    <img 
-                      src="https://via.placeholder.com/800x400?text=Truck+Image"
-                      alt="How WekaCargo Works" 
+                    <img
+                      src="https://cms.eichertrucksandbuses.com/uploads/banner/45/4acbc2537ff88774d56f6567debc5336.png"
+                      alt="Illustration of the WekaCargo logistics workflow"
                       className="how-it-works-image"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/800x400?text=How+WekaCargo+Works';
                       }}
                     />
                   </div>
@@ -358,13 +388,20 @@ const Homepage: React.FC = () => {
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[4] = el; }}
                   >
                     <div className="target-card-image-wrapper">
-                      <img 
-                        src="https://via.placeholder.com/800x400?text=Truck+Image"
-                        alt="Nationwide connectivity" 
+                      <img
+                        src="https://cms.eichertrucksandbuses.com/uploads/banner/45/4acbc2537ff88774d56f6567debc5336.png"
+                        alt="Map of Kenya connected by logistics routes"
                         className="target-card-image"
-                        style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
+                        style={{
+                          width: '100%',
+                          height: '200px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          display: 'block'
+                        }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                          (e.target as HTMLImageElement).src =
+                            'https://via.placeholder.com/800x400?text=Logistics+Network';
                         }}
                       />
                     </div>
@@ -382,13 +419,20 @@ const Homepage: React.FC = () => {
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[5] = el; }}
                   >
                     <div className="target-card-image-wrapper">
-                      <img 
-                        src="https://via.placeholder.com/800x400?text=Truck+Image"
-                        alt="Technology and innovation" 
+                      <img
+                        src="https://www.shutterstock.com/image-photo/semi-trailer-trucks-parking-sunset-260nw-1819687022.jpg"
+                        alt="Modern trucks supported by logistics technology"
                         className="target-card-image"
-                        style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
+                        style={{
+                          width: '100%',
+                          height: '200px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          display: 'block'
+                        }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                          (e.target as HTMLImageElement).src =
+                            'https://via.placeholder.com/800x400?text=Technology+Driven';
                         }}
                       />
                     </div>
@@ -406,13 +450,20 @@ const Homepage: React.FC = () => {
                     ref={(el: HTMLDivElement | null) => { sectionRefs.current[6] = el; }}
                   >
                     <div className="target-card-image-wrapper">
-                      <img 
-                        src="https://via.placeholder.com/800x400?text=Truck+Image"
-                        alt="Trust and safety" 
+                      <img
+                        src="https://www.shutterstock.com/image-photo/semi-trailer-trucks-parking-sunset-260nw-1819687022.jpg"
+                        alt="Secure and well‑maintained cargo trucks"
                         className="target-card-image"
-                        style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
+                        style={{
+                          width: '100%',
+                          height: '200px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          display: 'block'
+                        }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                          (e.target as HTMLImageElement).src =
+                            'https://via.placeholder.com/800x400?text=Trust+%26+Safety';
                         }}
                       />
                     </div>
