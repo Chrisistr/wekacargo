@@ -115,13 +115,3 @@ const TrackingPage: React.FC = () => {
   );
 };
 export default TrackingPage;
-                />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
-};
-export default TrackingPage;
