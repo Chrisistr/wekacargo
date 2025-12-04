@@ -413,3 +413,4 @@ const TruckerVehicles: React.FC = () => {
     </div>
   );
 };
+export default TruckerVehicles;
