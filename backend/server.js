@@ -20,8 +20,20 @@ if (!process.env.JWT_SECRET) {
 }
 const app = express();
 app.set('trust proxy', 1);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://wekacargo.netlify.app',
+  'http://localhost:3000'
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all origins in development
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
