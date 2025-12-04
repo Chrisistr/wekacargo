@@ -30,11 +30,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from './store';
 import { authAPI } from './services/api';
 import { setUser, logout, SESSION_TIMEOUT_MS, INACTIVITY_TIMEOUT_MS } from './store/authSlice';
-
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { user, token } = useSelector((state: RootState) => state.auth);
-
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -44,24 +42,19 @@ function App() {
         dispatch(logout());
       }
     };
-
     if (token && !user) {
       fetchCurrentUser();
     }
   }, [dispatch, token, user]);
-
   useEffect(() => {
     if (!token) return;
-
     let inactivityTimer: NodeJS.Timeout;
     let lastActivityTime = Date.now();
-
     const resetInactivityTimer = () => {
       lastActivityTime = Date.now();
       if (inactivityTimer) {
         clearTimeout(inactivityTimer);
       }
-      
       inactivityTimer = setTimeout(async () => {
         const timeSinceLastActivity = Date.now() - lastActivityTime;
         if (timeSinceLastActivity >= INACTIVITY_TIMEOUT_MS) {
@@ -75,31 +68,22 @@ function App() {
         }
       }, INACTIVITY_TIMEOUT_MS);
     };
-
     const enforceSessionTimeout = () => {
       const timestamp = localStorage.getItem('loginTimestamp');
       if (!timestamp) return;
-
       const elapsed = Date.now() - Number(timestamp);
       if (elapsed >= SESSION_TIMEOUT_MS) {
         dispatch(logout());
         toast.info('Session expired. Please login again.');
       }
     };
-
-    // Track user activity
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     activityEvents.forEach(event => {
       document.addEventListener(event, resetInactivityTimer, true);
     });
-
-    // Check session timeout every minute
     const sessionIntervalId = window.setInterval(enforceSessionTimeout, 60 * 1000);
     enforceSessionTimeout();
-    
-    // Initialize inactivity timer
     resetInactivityTimer();
-
     return () => {
       window.clearInterval(sessionIntervalId);
       if (inactivityTimer) {
@@ -110,7 +94,6 @@ function App() {
       });
     };
   }, [dispatch, token]);
-
   return (
     <div className="App">
       <Header />
@@ -147,6 +130,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
-

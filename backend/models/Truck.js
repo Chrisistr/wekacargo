@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const truckSchema = new mongoose.Schema({
   trucker: {
     type: mongoose.Schema.Types.ObjectId,
@@ -12,11 +11,11 @@ const truckSchema = new mongoose.Schema({
     required: true
   },
   capacity: {
-    weight: { type: Number, required: true }, // in tons
-    volume: { type: Number } // in cubic meters
+    weight: { type: Number, required: true }, 
+    volume: { type: Number } 
   },
   dimensions: {
-    length: Number, // in meters
+    length: Number, 
     width: Number,
     height: Number
   },
@@ -27,7 +26,7 @@ const truckSchema = new mongoose.Schema({
   },
   photos: [String],
   proofOfOwnership: {
-    type: String, // URL or base64 string for proof of ownership document
+    type: String, 
     default: null
   },
   location: {
@@ -37,15 +36,13 @@ const truckSchema = new mongoose.Schema({
         type: String,
         enum: ['Point']
       },
-      // [lng, lat] for MongoDB geospatial queries
-      // This field is optional – only set when we actually have coordinates
       coordinates: {
         type: [Number]
       }
     }
   },
   rates: {
-    perKm: { type: Number, required: true }, // KES per km
+    perKm: { type: Number, required: true }, 
     perHour: Number,
     minimumCharge: { type: Number, required: true }
   },
@@ -55,7 +52,7 @@ const truckSchema = new mongoose.Schema({
     availableUntil: Date,
     workingDays: [String]
   },
-  features: [String], // e.g., ["GPS", "Refrigeration", "Crane"]
+  features: [String], 
   insurance: {
     insured: { type: Boolean, default: false },
     expiryDate: Date
@@ -78,9 +75,5 @@ const truckSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Create geospatial index for location queries
 truckSchema.index({ 'location.coordinates': '2dsphere' });
-
 module.exports = mongoose.model('Truck', truckSchema);
-

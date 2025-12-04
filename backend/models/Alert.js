@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const alertSchema = new mongoose.Schema(
   {
     user: {
@@ -29,9 +28,5 @@ const alertSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
 alertSchema.index({ status: 1, createdAt: -1 });
-
 module.exports = mongoose.model('Alert', alertSchema);
-
-

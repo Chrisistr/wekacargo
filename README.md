@@ -63,11 +63,37 @@ FRONTEND_URL=http://localhost:3000
 # JWT Secret (use a strong secret in production)
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
-# M-Pesa Configuration (optional)
+# M-Pesa Configuration (Safaricom Daraja API)
+# Get these from: https://developer.safaricom.co.ke/
+# 
+# STEP-BY-STEP GUIDE:
+# 1. Go to https://developer.safaricom.co.ke/ and log in
+# 2. Click "My Apps" in the left sidebar
+# 3. Click on your app (or create a new one if you don't have one)
+# 4. On the app's Overview page, you'll see:
+#    - Consumer Key (copy this)
+#    - Consumer Secret (copy this - click "Show" to reveal it)
+# 5. Click the "Credentials" tab (NOT "Test Credentials" - that's for B2C payments)
+# 6. Find "Lipa na M-Pesa Online Passkey" - copy this long string
+# 7. For sandbox testing, use shortcode: 174379
+# 
+# NOTE: The "Initiator Password" on "Test Credentials" page is for B2C payments, NOT STK Push!
+# For STK Push, you need the Passkey from the Credentials tab of your app.
 MPESA_CONSUMER_KEY=your-mpesa-consumer-key
 MPESA_CONSUMER_SECRET=your-mpesa-consumer-secret
-MPESA_SHORTCODE=your-mpesa-shortcode
+MPESA_SHORTCODE=174379
 MPESA_PASSKEY=your-mpesa-passkey
+
+# Google OAuth Client ID (for Google Sign-In)
+# Get this from: https://console.cloud.google.com/apis/credentials
+# 1. Create a new project or select existing one
+# 2. Enable "Google+ API" or "Google Identity Services"
+# 3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID
+# 4. Application type: Web application
+# 5. Add authorized JavaScript origins: http://localhost:3000
+# 6. Add authorized redirect URIs: http://localhost:3000
+# 7. Copy the Client ID and paste it below (same ID for frontend too)
+GOOGLE_CLIENT_ID=your-google-oauth-client-id-here
 
 # Routing & distance calculation (no Google Maps required)
 # OpenRouteService: Free tier available at https://openrouteservice.org/
@@ -88,8 +114,11 @@ Create a `.env` file in the `frontend` directory if needed:
 # API URL (leave empty to use proxy)
 REACT_APP_API_URL=
 
-# Google Maps API Key
-REACT_APP_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+# Google OAuth Client ID (for Google Sign-In)
+# IMPORTANT: Use the SAME Client ID as in backend/.env
+# Get this from: https://console.cloud.google.com/apis/credentials
+# See backend .env file for detailed setup instructions
+REACT_APP_GOOGLE_CLIENT_ID=your-google-oauth-client-id-here
 ```
 
 ### 5. Start MongoDB
@@ -365,5 +394,6 @@ WekaCargo Development Team
 
 **Made with ❤️ for Kenya's logistics industry**
 
-#   w e k a c a r g o  
+#   w e k a c a r g o 
+ 
  

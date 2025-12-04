@@ -6,31 +6,25 @@ import { RootState } from '../store';
 import { logout } from '../store/authSlice';
 import { authAPI } from '../services/api';
 import './Header.css';
-
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const handleLogout = async () => {
     try {
-      // Call logout API to set status to inactive
       if (isAuthenticated) {
         await authAPI.logout();
       }
     } catch (error) {
-      // Continue with logout even if API call fails
       console.error('Logout API error:', error);
     } finally {
     dispatch(logout());
     navigate('/');
     }
   };
-
   const getDashboardLink = () => {
     if (!user) return null;
-    
     switch (user.role) {
       case 'trucker':
         return '/dashboard/trucker';
@@ -42,7 +36,6 @@ const Header: React.FC = () => {
         return null;
     }
   };
-
   return (
     <Navbar bg="light" expand="lg" className="shadow-sm">
       <div className="container">
@@ -100,6 +93,4 @@ const Header: React.FC = () => {
     </Navbar>
   );
 };
-
 export default Header;
-

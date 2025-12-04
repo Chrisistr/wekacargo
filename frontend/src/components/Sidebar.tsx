@@ -6,13 +6,11 @@ import { RootState } from '../store';
 import { logout } from '../store/authSlice';
 import { authAPI } from '../services/api';
 import './Sidebar.css';
-
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-
   const handleLogout = async () => {
     try {
       if (user) {
@@ -25,15 +23,12 @@ const Sidebar: React.FC = () => {
       navigate('/');
     }
   };
-
   const handleNavigation = (path: string) => {
     navigate(path);
   };
-
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
-
   return (
     <div className="sidebar sidebar-visible">
       <div className="sidebar-header">
@@ -209,6 +204,4 @@ const Sidebar: React.FC = () => {
     </div>
   );
 };
-
 export default Sidebar;
-

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -47,8 +46,8 @@ const userSchema = new mongoose.Schema({
   profile: {
     avatar: String,
     bio: String,
-    licenseNumber: String, // For truckers
-    vehicleCount: Number // For truckers
+    licenseNumber: String, 
+    vehicleCount: Number 
   },
   verification: {
     emailVerified: { type: Boolean, default: false },
@@ -70,11 +69,8 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -83,19 +79,13 @@ userSchema.pre('save', async function(next) {
     next(error);
   }
 });
-
-// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
-
-// Update rating when new review is added
 userSchema.methods.updateRating = async function(newRating) {
   const totalRating = this.rating.average * this.rating.count + newRating;
   this.rating.count += 1;
   this.rating.average = totalRating / this.rating.count;
   await this.save();
 };
-
 module.exports = mongoose.model('User', userSchema);
-

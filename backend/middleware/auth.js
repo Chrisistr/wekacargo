@@ -1,25 +1,19 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    
     if (!authHeader) {
       return res.status(401).json({ message: 'No authorization header provided' });
     }
-
     const token = authHeader.replace('Bearer ', '').trim();
-    
     if (!token || token === 'null' || token === 'undefined') {
       return res.status(401).json({ message: 'No token provided' });
     }
-
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET is not configured');
       return res.status(500).json({ message: 'Server configuration error' });
     }
-
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -32,39 +26,29 @@ const auth = async (req, res, next) => {
         return res.status(401).json({ message: 'Token verification failed' });
       }
     }
-
     if (!decoded || !decoded.id) {
       return res.status(401).json({ message: 'Invalid token payload' });
     }
-
     const user = await User.findById(decoded.id).select('-password');
-    
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
-
-    // Only check status for non-admin users, and allow 'inactive' status (user is just logged out)
-    // 'suspended' and 'banned' are the only blocking statuses
     if (user.role !== 'admin' && user.status === 'suspended') {
       return res.status(401).json({ message: 'Your account has been suspended. Please contact support.' });
     }
     if (user.role !== 'admin' && user.status === 'banned') {
       return res.status(401).json({ message: 'Your account has been banned. Please contact support.' });
     }
-
-    // Attach user with consistent ID format
     req.user = {
       ...user.toObject(),
       id: user._id.toString()
     };
-    
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(500).json({ message: 'Authentication error occurred' });
   }
 };
-
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -73,6 +57,4 @@ const authorize = (...roles) => {
     next();
   };
 };
-
 module.exports = { auth, authorize };
-
