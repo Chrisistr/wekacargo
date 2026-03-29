@@ -1,9 +1,15 @@
-# Netlify: build from the frontend folder (monorepo layout).
+# Netlify: monorepo — build only the React app in frontend/
+# Dashboard: Site configuration → Environment variables (required for production builds)
+#
+#   REACT_APP_API_URL     = https://YOUR-SERVICE.onrender.com/api   (no slash after "api")
+#   REACT_APP_GOOGLE_CLIENT_ID = same value as backend GOOGLE_CLIENT_ID (or Google button stays hidden)
+
 [build]
   base = "frontend"
   command = "npm run build"
   publish = "build"
 
-# Production: set REACT_APP_API_URL in Netlify → Site configuration → Environment variables
-# to your public API base URL, e.g. https://your-node-backend.onrender.com/api
-# Static hosting cannot serve /api — the SPA rule in public/_redirects would return index.html for /api/*.
+[build.environment]
+  NODE_VERSION = "18"
+
+# SPA fallback is also in frontend/public/_redirects (copied into build/)

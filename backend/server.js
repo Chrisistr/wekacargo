@@ -18,6 +18,20 @@ if (!process.env.JWT_SECRET) {
   console.error('ERROR: JWT_SECRET is not set in .env file. Please configure it before starting the server.');
   process.exit(1);
 }
+const DEFAULT_LOCAL_MONGO = 'mongodb://localhost:27017/wekacargo';
+const mongoFromEnv = process.env.MONGODB_URI?.trim();
+const MONGODB_URI = mongoFromEnv || DEFAULT_LOCAL_MONGO;
+if (process.env.NODE_ENV === 'production') {
+  const missingOrLocal =
+    !mongoFromEnv ||
+    /^mongodb:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(mongoFromEnv);
+  if (missingOrLocal) {
+    console.error(
+      'ERROR: MONGODB_URI must be set to your MongoDB Atlas URI in Render → Environment. Render has no local MongoDB; localhost will always fail.'
+    );
+    process.exit(1);
+  }
+}
 const app = express();
 app.set('trust proxy', 1);
 const allowedOrigins = [
@@ -57,7 +71,6 @@ const apiLimiter = rateLimit({
   },
 });
 app.use('/api/', apiLimiter);
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wekacargo';
 console.log('Attempting to connect to MongoDB...');
 console.log(`Connection string: ${MONGODB_URI.replace(/\/\/.*@/, '//***@')}`);
 mongoose.connect(MONGODB_URI, {
@@ -107,7 +120,7 @@ mongoose.connect(MONGODB_URI, {
     console.error('\n  Solutions:');
     console.error('  - Start MongoDB: mongod (for local)');
     console.error('  - Check MONGODB_URI in backend/.env');
-    console.error('  - Verify MongoDB Atlas connection string (if using cloud)');
+    console.error('  - On Render: set MONGODB_URI to Atlas mongodb+srv://... and allow 0.0.0.0/0 in Atlas Network Access');
   }
   process.exit(1);
 });
