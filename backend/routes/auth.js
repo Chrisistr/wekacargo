@@ -244,7 +244,12 @@ router.post('/google', async (req, res) => {
       audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
-    const { email, name, picture, sub: googleId } = payload;
+    const { name, picture, sub: googleId } = payload;
+    const emailRaw = payload.email;
+    if (!emailRaw || typeof emailRaw !== 'string') {
+      return res.status(400).json({ message: 'Google did not return an email for this account' });
+    }
+    const email = emailRaw.toLowerCase().trim();
     let user = await User.findOne({ email });
     let needsRegistration = false;
     if (user) {
@@ -294,7 +299,11 @@ router.post('/google', async (req, res) => {
     });
   } catch (error) {
     console.error('Google login error:', error);
-    res.status(500).json({ message: 'Server error during Google login' });
+    const msg =
+      error && error.message && String(error.message).includes('Token used too late')
+        ? 'Google sign-in expired. Please try again.'
+        : 'Server error during Google login';
+    res.status(500).json({ message: msg });
   }
 });
 router.post('/google/complete', auth, [
@@ -368,12 +377,6 @@ router.get('/me', auth, async (req, res) => {
 });
 router.post('/logout', auth, async (req, res) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const user = await User.findById(userId);
-    if (user && user.role !== 'admin') {
-      user.status = 'inactive';
-      await user.save();
-    }
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 const TruckerVehicles: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const userId = user?.id || (user as any)?._id || '';
+  const userId = user?._id || user?.id || '';
   const navigate = useNavigate();
   const [myTrucks, setMyTrucks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const TruckerVehicles: React.FC = () => {
       const truckerId =
         typeof trucker === 'string'
           ? trucker
-          : (trucker as any)?._id || (trucker as any)?.id;
+          : trucker?._id || trucker?.id;
       return truckerId?.toString() === userId;
     },
     [userId]

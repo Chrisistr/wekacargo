@@ -30,8 +30,11 @@ const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
+    } else if (process.env.NODE_ENV !== 'production') {
+      callback(null, true);
     } else {
-      callback(null, true); // Allow all origins in development
+      console.warn('CORS blocked origin:', origin);
+      callback(null, false);
     }
   },
   credentials: true,
@@ -41,11 +44,19 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.API_RATE_LIMIT_MAX) || 800,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    if (req.method === 'OPTIONS') return true;
+    const url = (req.originalUrl || req.url || '').split('?')[0];
+    if (url.includes('/health')) return true;
+    return false;
+  },
 });
-app.use('/api/', limiter);
+app.use('/api/', apiLimiter);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wekacargo';
 console.log('Attempting to connect to MongoDB...');
 console.log(`Connection string: ${MONGODB_URI.replace(/\/\/.*@/, '//***@')}`);

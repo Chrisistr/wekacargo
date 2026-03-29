@@ -5,6 +5,90 @@ const crypto = require('crypto');
 const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const { auth } = require('../middleware/auth');
+
+/** Daraja STK rejects localhost/http (error 400.002.02). Never default to localhost — that still hits Safaricom and fails. */
+function resolveMpesaCallbackUrl() {
+  const explicit = (process.env.MPESA_CALLBACK_URL || '').trim().replace(/\s+/g, '');
+  if (explicit) {
+    return explicit.replace(/\/+$/, '');
+  }
+  const base = (process.env.BACKEND_URL || '').trim().replace(/\/+$/, '');
+  if (!base) return '';
+  try {
+    const u = new URL(base);
+    if (
+      u.protocol === 'https:' &&
+      u.hostname !== 'localhost' &&
+      u.hostname !== '127.0.0.1'
+    ) {
+      return `${base}/api/payments/callback`.replace(/\s+/g, '').replace(/\/+$/, '');
+    }
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
+function validateMpesaCallbackUrl(urlString) {
+  if (!urlString || !String(urlString).trim()) {
+    return {
+      ok: false,
+      message:
+        'Set MPESA_CALLBACK_URL in backend/.env to a public HTTPS URL. Local dev: run "ngrok http 5001" (use your PORT), then set MPESA_CALLBACK_URL=https://YOUR-SUBDOMAIN.ngrok-free.app/api/payments/callback — restart the backend after saving.',
+    };
+  }
+  let url;
+  try {
+    url = new URL(urlString);
+  } catch {
+    return {
+      ok: false,
+      message:
+        'MPESA_CALLBACK_URL must be a full URL, e.g. https://YOUR-NGROK.ngrok-free.app/api/payments/callback',
+    };
+  }
+  if (url.protocol !== 'https:') {
+    return {
+      ok: false,
+      message:
+        'M-Pesa requires an HTTPS CallBackURL. Use ngrok (https) or your deployed API URL in MPESA_CALLBACK_URL.',
+    };
+  }
+  const host = url.hostname.toLowerCase();
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]' ||
+    host === '::1' ||
+    host.startsWith('192.168.') ||
+    /^10\.\d+\.\d+\.\d+$/.test(host) ||
+    host.endsWith('.local')
+  ) {
+    return {
+      ok: false,
+      message:
+        'M-Pesa cannot use localhost or private networks as CallBackURL. Run: ngrok http <your backend port>, then set MPESA_CALLBACK_URL=https://YOUR-SUBDOMAIN.ngrok-free.app/api/payments/callback in backend/.env',
+    };
+  }
+  return { ok: true, url: urlString };
+}
+
+/** yyyyMMddHHmmss in Africa/Nairobi — required for valid STK Password with Daraja. */
+function mpesaTimestampNairobi() {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Nairobi',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const g = (type) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${g('year')}${g('month')}${g('day')}${g('hour')}${g('minute')}${g('second')}`;
+}
+
 const getAccessToken = async () => {
   try {
     const consumerKey = process.env.MPESA_CONSUMER_KEY;
@@ -137,13 +221,7 @@ router.post('/initiate', auth, async (req, res) => {
         help: 'The shortcode must contain only numbers. Remove any spaces, letters, or special characters.'
       });
     }
-    const now = new Date();
-    const timestamp = now.getFullYear().toString() +
-      String(now.getMonth() + 1).padStart(2, '0') +
-      String(now.getDate()).padStart(2, '0') +
-      String(now.getHours()).padStart(2, '0') +
-      String(now.getMinutes()).padStart(2, '0') +
-      String(now.getSeconds()).padStart(2, '0');
+    const timestamp = mpesaTimestampNairobi();
     if (timestamp.length !== 14) {
       return res.status(500).json({ 
         message: 'Internal error: Invalid timestamp format',
@@ -161,20 +239,23 @@ router.post('/initiate', auth, async (req, res) => {
     console.log('  Password (base64) length:', password.length);
     console.log('  Has all components:', !!(shortcode && passkey && timestamp));
     console.log('  ⚠️ IMPORTANT: Shortcode and Passkey must match the same app/shortcode in Daraja dashboard!');
-    const callbackURL = process.env.MPESA_CALLBACK_URL || `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/callback`;
-    if (callbackURL.includes('localhost') || callbackURL.includes('127.0.0.1')) {
-      console.warn('⚠️ WARNING: Callback URL uses localhost.');
-      console.warn('⚠️ STK Push will still work, but payment confirmation callback won\'t be received.');
-      console.warn('⚠️ For full functionality, use ngrok: ngrok http 5000');
-      console.warn('⚠️ Then set: MPESA_CALLBACK_URL=https://your-ngrok-url.ngrok.io/api/payments/callback');
+    const callbackURL = resolveMpesaCallbackUrl();
+    const callbackCheck = validateMpesaCallbackUrl(callbackURL);
+    if (!callbackCheck.ok) {
+      console.error('M-Pesa CallBackURL invalid:', callbackURL, callbackCheck.message);
+      return res.status(400).json({
+        message: callbackCheck.message,
+        error: 'Invalid CallBackURL',
+      });
     }
+    const cleanCallbackURL = callbackCheck.url.trim().replace(/\s+/g, '');
     console.log('Payment Details:', {
       amount,
       originalPhoneNumber: phoneNumber,
       formattedPhoneNumber: formattedPhone,
       shortcode,
       timestamp,
-      callbackURL,
+      callbackURL: cleanCallbackURL,
       hasPasskey: !!passkey
     });
     let accessToken;
@@ -189,7 +270,6 @@ router.post('/initiate', auth, async (req, res) => {
       });
     }
     const businessShortCode = String(shortcode);
-    const cleanCallbackURL = callbackURL.trim().replace(/\s+/g, '');
     const stkPushPayload = {
       BusinessShortCode: businessShortCode,
       Password: password,
@@ -240,7 +320,8 @@ router.post('/initiate', auth, async (req, res) => {
       } else if (response.data.ResponseCode === '2001' || response.data.ResponseCode === '2002') {
         userFriendlyMessage = 'Invalid phone number or amount. Please check and try again.';
       } else if (response.data.ResponseCode === '400.002.02') {
-        userFriendlyMessage = 'Invalid shortcode or passkey. Please check your M-Pesa credentials.';
+        userFriendlyMessage =
+          'Invalid CallBackURL (must be public HTTPS). Set MPESA_CALLBACK_URL in backend/.env — use ngrok for local dev.';
       }
       return res.status(400).json({ 
         message: userFriendlyMessage,
@@ -278,12 +359,33 @@ router.post('/initiate', auth, async (req, res) => {
     console.error('Payment initiation error:', error);
     let errorMessage = 'Failed to initiate payment';
     let errorDetails = null;
+    let httpStatus = 500;
     if (error.response) {
-      errorMessage = error.response.data?.errorMessage || 
-                    error.response.data?.CustomerMessage || 
-                    error.response.data?.message || 
-                    'M-Pesa API error';
-      errorDetails = error.response.data;
+      const data = error.response.data;
+      errorDetails = data;
+      errorMessage =
+        data?.errorMessage ||
+        data?.CustomerMessage ||
+        data?.message ||
+        'M-Pesa API error';
+      if (data?.errorCode === '400.002.02' || String(errorMessage).includes('Invalid CallBackURL')) {
+        errorMessage =
+          'Invalid M-Pesa CallBackURL. Set MPESA_CALLBACK_URL in backend/.env to a public HTTPS URL, e.g. https://xxxx.ngrok-free.app/api/payments/callback (run: ngrok http <backend port>).';
+      }
+      const reqUrl = error.config?.url || '';
+      if (
+        reqUrl.includes('stkpush') &&
+        (data?.errorCode === '500.001.1001' ||
+          String(data?.errorMessage || '').toLowerCase().includes('wrong credentials'))
+      ) {
+        errorMessage =
+          'M-Pesa rejected the STK security password (shortcode + passkey + timestamp). Your Consumer Key/Secret are OK. Fix MPESA_PASSKEY: in developer.safaricom.co.ke open the same sandbox app you use for the key/secret → Lipa Na M-Pesa / M-Pesa Express test credentials → copy the Online Passkey for shortcode ' +
+          (process.env.MPESA_SHORTCODE?.replace(/\s+/g, '').trim() || '174379') +
+          ' exactly into backend/.env as MPESA_PASSKEY (no quotes unless the whole value is quoted). MPESA_SHORTCODE must match that same credential row. Restart the backend after saving.';
+      }
+      if (error.response.status >= 400 && error.response.status < 500) {
+        httpStatus = error.response.status;
+      }
       console.error('M-Pesa API Error Response:', JSON.stringify(error.response.data, null, 2));
     } else if (error.request) {
       errorMessage = 'No response from M-Pesa. Please check your internet connection and try again.';
@@ -292,9 +394,9 @@ router.post('/initiate', auth, async (req, res) => {
       errorMessage = error.message || 'Failed to initiate payment';
       console.error('Request setup error:', error.message);
     }
-    res.status(500).json({ 
+    res.status(httpStatus).json({
       message: errorMessage,
-      details: errorDetails
+      details: errorDetails,
     });
   }
 });

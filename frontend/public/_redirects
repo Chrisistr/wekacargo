@@ -1,1 +1,2 @@
+# SPA fallback. Do not use relative /api for API calls in production — set REACT_APP_API_URL on Netlify.
 /*    /index.html   200

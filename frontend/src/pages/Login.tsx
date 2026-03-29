@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Form, Button, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { login, setUser } from '../store/authSlice';
 import { authAPI } from '../services/api';
+import {
+  setGoogleCredentialHandler,
+  clearGoogleCredentialHandler,
+  ensureGoogleIdentityInitialized,
+  clearGoogleButtonHost,
+} from '../utils/googleIdentity';
 declare global {
   interface Window {
     google: {
@@ -12,6 +18,7 @@ declare global {
         id: {
           initialize: (config: any) => void;
           renderButton: (element: HTMLElement, config: any) => void;
+          cancel?: () => void;
         };
       };
       maps?: {
@@ -49,93 +56,10 @@ const Login: React.FC = () => {
   const [completingRegistration, setCompletingRegistration] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  useEffect(() => {
-    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not configured. Google login will not work.');
-      return;
-    }
-    const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
-    if (existingScript) {
-      if (window.google?.accounts?.id) {
-        setTimeout(() => initializeGoogleSignIn(), 100);
-      } else {
-        console.warn('Google script loaded but window.google.accounts.id is not available');
-      }
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.id = 'google-identity-services-script';
-    script.onload = () => {
-      if (window.google?.accounts?.id) {
-        setTimeout(() => initializeGoogleSignIn(), 100);
-      } else {
-        console.error('Google script loaded but window.google.accounts.id is not available');
-      }
-    };
-    script.onerror = () => {
-      console.error('Failed to load Google Identity Services script');
-      toast.error('Failed to load Google Sign-In. Please check your internet connection.');
-    };
-    document.head.appendChild(script);
-    return () => {
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
-  const initializeGoogleSignIn = () => {
-    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not set');
-      return;
-    }
-    if (!window.google?.accounts?.id) {
-      console.error('window.google.accounts.id is not available');
-      return;
-    }
-    try {
-      window.google.accounts.id.initialize({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-        callback: handleGoogleSignIn,
-      });
-      const renderButton = () => {
-        const buttonElement = document.getElementById('google-signin-button');
-        if (!buttonElement) {
-          console.warn('Google sign-in button element not found');
-          return;
-        }
-        if (buttonElement.hasChildNodes()) {
-          console.log('Google sign-in button already rendered');
-          return;
-        }
-        try {
-          window.google.accounts?.id.renderButton(buttonElement, {
-            theme: 'outline',
-            size: 'large',
-            width: '100%',
-            text: 'signin_with',
-            locale: 'en'
-          });
-          console.log('Google sign-in button rendered successfully');
-        } catch (error) {
-          console.error('Error rendering Google sign-in button:', error);
-          toast.error('Failed to render Google Sign-In button');
-        }
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(renderButton, 500);
-        });
-      } else {
-        setTimeout(renderButton, 500);
-      }
-    } catch (error) {
-      console.error('Error initializing Google Sign-In:', error);
-      toast.error('Failed to initialize Google Sign-In');
-    }
-  };
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleCallbackRef = useRef<(response: any) => void>(() => {});
   const handleGoogleSignIn = async (response: any) => {
-    console.log('Google sign-in response received');
+    console.log('Google sign-in response received:', response);
     if (!response || !response.credential) {
       console.error('Invalid Google sign-in response:', response);
       toast.error('Google sign-in failed. Please try again.');
@@ -151,6 +75,7 @@ const Login: React.FC = () => {
       setLoading(false);
       const errorMessage = error.response?.data?.message || error.message || 'Google login failed';
       console.error('Google login error:', error);
+      console.error('Error response:', error.response);
       toast.error(errorMessage);
     }
   };
@@ -237,6 +162,80 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
+
+  googleCallbackRef.current = handleGoogleSignIn;
+
+  useEffect(() => {
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) return;
+
+    setGoogleCredentialHandler((r: unknown) => {
+      void googleCallbackRef.current(r as any);
+    });
+
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    let mountAttempts = 0;
+    const mountButton = () => {
+      if (cancelled) return;
+      const gsi = window.google?.accounts?.id;
+      if (!gsi) return;
+      const host = googleButtonRef.current;
+      if (!host) {
+        mountAttempts += 1;
+        if (mountAttempts < 60) {
+          timers.push(setTimeout(mountButton, 50));
+        }
+        return;
+      }
+      try {
+        const slot = document.createElement('div');
+        host.replaceChildren(slot);
+        ensureGoogleIdentityInitialized(clientId);
+        gsi.renderButton(slot, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'signin_with',
+          locale: 'en',
+        });
+      } catch (e) {
+        console.error('Google Sign-In render error:', e);
+      }
+    };
+
+    let gsiWaitAttempts = 0;
+    const waitForGsiThenMount = () => {
+      if (cancelled) return;
+      if (window.google?.accounts?.id) {
+        timers.push(setTimeout(mountButton, 200));
+        return;
+      }
+      gsiWaitAttempts += 1;
+      if (gsiWaitAttempts > 200) {
+        toast.error(
+          'Google Sign-In did not load. Allow scripts from accounts.google.com, turn off ad blockers for this site, or check your network.'
+        );
+        return;
+      }
+      timers.push(setTimeout(waitForGsiThenMount, 50));
+    };
+    waitForGsiThenMount();
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      clearGoogleCredentialHandler();
+      clearGoogleButtonHost(googleButtonRef.current);
+      try {
+        (window.google?.accounts?.id as { cancel?: () => void } | undefined)?.cancel?.();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
@@ -281,8 +280,8 @@ const Login: React.FC = () => {
                   </span>
                 </div>
               </div>
-              {process.env.REACT_APP_GOOGLE_CLIENT_ID ? (
-                <div id="google-signin-button" className="mb-3"></div>
+              {process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim() ? (
+                <div ref={googleButtonRef} className="mb-3" />
               ) : (
                 <Button
                   variant="outline-primary"

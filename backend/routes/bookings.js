@@ -21,6 +21,33 @@ const appendTruckActivity = async (truckId, action, performedBy, metadata = {}) 
     console.error('Truck activity log error:', error);
   }
 };
+router.get('/available', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'trucker') {
+      return res.status(403).json({ message: 'Only truckers can view available bookings' });
+    }
+    
+    const Truck = require('../models/Truck');
+    const myTrucks = await Truck.find({ trucker: req.user.id, status: 'active' });
+    
+    if (myTrucks.length === 0) {
+      return res.json([]);
+    }
+    
+    const availableBookings = await Booking.find({
+      status: 'pending',
+      truck: { $in: myTrucks.map(t => t._id) }
+    })
+    .populate('customer', 'name phone email location profile rating')
+    .populate('truck', 'type capacity rates registrationNumber')
+    .sort({ createdAt: -1 });
+    
+    res.json(availableBookings);
+  } catch (error) {
+    console.error('Get available bookings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 router.get('/my-bookings', auth, async (req, res) => {
   try {
     const query = req.user.role === 'customer' 

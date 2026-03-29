@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar';
 interface Booking {
   _id: string;
   customer: { name: string; phone: string; profile?: { avatar?: string } };
+  truck: { type: string; registrationNumber: string };
   origin: { address: string };
   destination: { address: string };
   cargoDetails: any;
@@ -28,11 +29,12 @@ interface Notification {
 }
 const TruckerDashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const userId = user?.id || (user as any)?._id || '';
+  const userId = user?._id || user?.id || '';
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [myTrucks, setMyTrucks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableBookings, setAvailableBookings] = useState<Booking[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const belongsToCurrentUser = useCallback(
     (truck: any) => {
@@ -69,6 +71,15 @@ const TruckerDashboard: React.FC = () => {
       console.error('Failed to fetch trucks');
     }
   }, [user, belongsToCurrentUser]);
+  const fetchAvailableBookings = useCallback(async () => {
+    if (!user || user.role !== 'trucker') return;
+    try {
+      const response = await bookingsAPI.getAvailableBookings();
+      setAvailableBookings(response.data);
+    } catch (error) {
+      console.error('Failed to fetch available bookings:', error);
+    }
+  }, [user]);
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     try {
@@ -85,8 +96,9 @@ const TruckerDashboard: React.FC = () => {
     }
     fetchBookings();
     fetchTrucks();
+    fetchAvailableBookings();
     fetchNotifications();
-  }, [user, fetchBookings, fetchTrucks, fetchNotifications]);
+  }, [user, fetchBookings, fetchTrucks, fetchAvailableBookings, fetchNotifications]);
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
       await bookingsAPI.update(bookingId, { status: newStatus });
@@ -174,6 +186,105 @@ const TruckerDashboard: React.FC = () => {
                 </Card>
               </Col>
             </Row>
+          {}
+          {!loading && availableBookings.length > 0 && (
+            <Row className="mb-4">
+              <Col>
+                <div className="d-flex align-items-center mb-3">
+                  <h3 className="mb-0 me-3">Available Bookings for Your Trucks</h3>
+                  <Badge bg="success" style={{ fontSize: '1rem', padding: '8px 15px' }}>
+                    {availableBookings.length} available
+                  </Badge>
+                </div>
+                <Row className="g-3">
+                  {availableBookings.map((booking) => (
+                    <Col key={booking._id} md={6}>
+                      <Card className="card-hover" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', height: '100%' }}>
+                        <Card.Body>
+                          <div className="d-flex justify-content-between align-items-start mb-3">
+                            <div className="d-flex align-items-center">
+                              <div style={{
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                marginRight: '12px',
+                                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '1.2rem',
+                                fontWeight: 'bold',
+                                flexShrink: 0
+                              }}>
+                                {(booking.customer as any)?.profile?.avatar ? (
+                                  <img 
+                                    src={(booking.customer as any).profile.avatar} 
+                                    alt={booking.customer.name || 'Customer'} 
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.textContent = booking.customer.name?.charAt(0).toUpperCase() || 'C';
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  booking.customer.name?.charAt(0).toUpperCase() || 'C'
+                                )}
+                              </div>
+                              <div>
+                                <h6 className="mb-1">{booking.customer.name}</h6>
+                                <p className="text-muted small mb-0">{booking.customer.phone}</p>
+                              </div>
+                            </div>
+                            <Badge bg="success">Available</Badge>
+                          </div>
+                          <div className="mb-3">
+                            <p className="mb-1">
+                              <strong>Route:</strong> {booking.origin.address} → {booking.destination.address}
+                            </p>
+                            {booking.cargoDetails && (
+                              <p className="mb-1 small text-muted">
+                                <strong>Cargo:</strong> {booking.cargoDetails.type} • {booking.cargoDetails.weight} tons
+                              </p>
+                            )}
+                            <p className="mb-1 small text-muted">
+                              <strong>Truck:</strong> {booking.truck.type?.toUpperCase()} • {booking.truck.registrationNumber}
+                            </p>
+                            <p className="mb-0">
+                              <strong style={{ color: '#28a745', fontSize: '1.1rem' }}>
+                                KES {booking.pricing.estimatedAmount.toLocaleString()}
+                              </strong>
+                            </p>
+                          </div>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <Button 
+                              size="sm" 
+                              variant="success"
+                              onClick={() => updateBookingStatus(booking._id, 'confirmed')}
+                            >
+                              Accept Booking
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline-primary"
+                              onClick={() => navigate(`/booking/${booking._id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </Col>
+            </Row>
+          )}
           {}
           {!loading && bookings.filter(b => b.status === 'pending').length > 0 && (
             <Row className="mb-4">
@@ -377,10 +488,21 @@ const TruckerDashboard: React.FC = () => {
               </Col>
             </Row>
           )}
-          {!loading && bookings.filter(b => b.status === 'pending').length === 0 && activeBookings.length === 0 && (
+          {!loading && availableBookings.length === 0 && bookings.filter(b => b.status === 'pending').length === 0 && activeBookings.length === 0 && (
             <Card className="text-center py-5" style={{ border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
               <Card.Body>
-                <p className="text-muted">No new delivery requests or undelivered bookings at the moment.</p>
+                <h5 className="text-muted mb-3">No Bookings Available</h5>
+                <p className="text-muted mb-4">
+                  {myTrucks.length === 0 
+                    ? "You haven't added any vehicles yet. Add your first truck to start receiving booking requests."
+                    : "No current bookings available. Customers will see your trucks and can book them for deliveries."
+                  }
+                </p>
+                {myTrucks.length === 0 && (
+                  <Button variant="primary" onClick={() => navigate('/trucker/add-vehicle')}>
+                    Add Your First Vehicle
+                  </Button>
+                )}
               </Card.Body>
             </Card>
           )}

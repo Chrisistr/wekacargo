@@ -1,0 +1,11 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# After first deploy, set env vars in the Render dashboard (secrets are not committed).
+services:
+  - type: web
+    name: wekacargo-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health

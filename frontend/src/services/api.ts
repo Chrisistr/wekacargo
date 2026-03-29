@@ -2,8 +2,10 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { store } from '../store';
 import { logout } from '../store/authSlice';
 import { toast } from 'react-toastify';
+import { resolveApiBaseURL, warnIfHtmlInsteadOfJson } from './apiBaseUrl';
+
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: resolveApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,20 +24,34 @@ api.interceptors.request.use(
 );
 api.interceptors.response.use(
   (response) => {
-    if (response.data && response.data.user) {
-      response.data.user = {
-        ...response.data.user,
-        id: response.data.user.id || response.data.user._id
-      };
+    const url = response.config?.url || '';
+    warnIfHtmlInsteadOfJson(response.data as unknown, url);
+    if (response.data && typeof response.data === 'object' && response.data !== null && 'user' in response.data) {
+      const d = response.data as { user?: Record<string, unknown> };
+      if (d.user) {
+        d.user = {
+          ...d.user,
+          id: d.user.id || d.user._id
+        };
+      }
     }
     return response;
   },
   (error: AxiosError) => {
+    const resData = error.response?.data;
+    if (typeof resData === 'string') {
+      warnIfHtmlInsteadOfJson(resData, error.config?.url || '');
+    }
     if (error.response) {
       const status = error.response.status;
       if (status === 401) {
         const url = error.config?.url || '';
-        if (!url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/admin/login')) {
+        if (
+          !url.includes('/auth/login') &&
+          !url.includes('/auth/register') &&
+          !url.includes('/auth/admin/login') &&
+          !url.includes('/auth/google')
+        ) {
           store.dispatch(logout());
           toast.error('Session expired. Please login again.');
           if (!window.location.pathname.includes('/login')) {
@@ -49,11 +65,30 @@ api.interceptors.response.use(
           toast.error('Access forbidden');
         }
       }
+      if (status === 429) {
+        toast.error(
+          'Too many requests. Wait a minute and try again. If this keeps happening, the app may be sending requests too quickly.'
+        );
+      }
       if (status === 500) {
-        toast.error('Server error. Please try again later.');
+        const payUrl = error.config?.url || '';
+        if (payUrl.includes('/payments/initiate')) {
+          /* BookingDetails shows a specific toast */
+        } else {
+          toast.error('Server error. Please try again later.');
+        }
       }
     } else if (error.request) {
-      toast.error('Network error. Please check your connection.');
+      const base = resolveApiBaseURL();
+      const isLocalApi =
+        base === '/api' ||
+        base.includes('localhost') ||
+        base.includes('127.0.0.1');
+      toast.error(
+        isLocalApi
+          ? `Cannot reach the API (${base}). Start the backend from the project "backend" folder (node server.js). Port must match backend/.env PORT (usually 5001), then restart "npm start".`
+          : 'Network error. Please check your connection.'
+      );
     }
     return Promise.reject(error);
   }
@@ -101,6 +136,7 @@ export const trucksAPI = {
 };
 export const bookingsAPI = {
   getMyBookings: () => api.get('/bookings/my-bookings'),
+  getAvailableBookings: () => api.get('/bookings/available'),
   getById: (id: string) => api.get(`/bookings/${id}`),
   create: (data: {
     truckId: string;

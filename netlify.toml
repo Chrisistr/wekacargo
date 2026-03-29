@@ -1,0 +1,9 @@
+# Netlify: build from the frontend folder (monorepo layout).
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "build"
+
+# Production: set REACT_APP_API_URL in Netlify → Site configuration → Environment variables
+# to your public API base URL, e.g. https://your-node-backend.onrender.com/api
+# Static hosting cannot serve /api — the SPA rule in public/_redirects would return index.html for /api/*.

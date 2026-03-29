@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Form, Button, Tabs, Tab, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { login, setUser } from '../store/authSlice';
 import { authAPI } from '../services/api';
+import {
+  setGoogleCredentialHandler,
+  clearGoogleCredentialHandler,
+  ensureGoogleIdentityInitialized,
+  clearGoogleButtonHost,
+} from '../utils/googleIdentity';
 declare global {
   interface Window {
     google: {
@@ -12,6 +18,7 @@ declare global {
         id: {
           initialize: (config: any) => void;
           renderButton: (element: HTMLElement, config: any) => void;
+          cancel?: () => void;
         };
       };
       maps?: {
@@ -57,101 +64,9 @@ const Register: React.FC = () => {
   const [completingRegistration, setCompletingRegistration] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  useEffect(() => {
-    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not configured. Google login will not work.');
-      return;
-    }
-    const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
-    if (existingScript) {
-      if (window.google?.accounts?.id) {
-        setTimeout(() => initializeGoogleSignIn(), 100);
-      } else {
-        console.warn('Google script loaded but window.google.accounts.id is not available');
-      }
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.id = 'google-identity-services-script';
-    script.onload = () => {
-      if (window.google?.accounts?.id) {
-        setTimeout(() => initializeGoogleSignIn(), 100);
-      } else {
-        console.error('Google script loaded but window.google.accounts.id is not available');
-      }
-    };
-    script.onerror = () => {
-      console.error('Failed to load Google Identity Services script');
-      toast.error('Failed to load Google Sign-In. Please check your internet connection.');
-    };
-    document.head.appendChild(script);
-    return () => {
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
-  const initializeGoogleSignIn = () => {
-    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      console.warn('REACT_APP_GOOGLE_CLIENT_ID is not set');
-      return;
-    }
-    if (!window.google?.accounts?.id) {
-      console.error('window.google.accounts.id is not available');
-      return;
-    }
-    try {
-      window.google.accounts?.id.initialize({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-        callback: handleGoogleSignIn,
-      });
-      const renderButtons = () => {
-        const customerButton = document.getElementById('google-signin-button-customer');
-        const truckerButton = document.getElementById('google-signin-button-trucker');
-        if (customerButton && !customerButton.hasChildNodes()) {
-          try {
-            window.google.accounts?.id.renderButton(customerButton, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signup_with',
-              locale: 'en'
-            });
-            console.log('Customer Google sign-in button rendered successfully');
-          } catch (error) {
-            console.error('Error rendering customer Google button:', error);
-            toast.error('Failed to render Google Sign-In button');
-          }
-        }
-        if (truckerButton && !truckerButton.hasChildNodes()) {
-          try {
-            window.google.accounts?.id.renderButton(truckerButton, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signup_with',
-              locale: 'en'
-            });
-            console.log('Trucker Google sign-in button rendered successfully');
-          } catch (error) {
-            console.error('Error rendering trucker Google button:', error);
-            toast.error('Failed to render Google Sign-In button');
-          }
-        }
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(renderButtons, 500);
-        });
-      } else {
-        setTimeout(renderButtons, 500);
-      }
-    } catch (error) {
-      console.error('Error initializing Google Sign-In:', error);
-      toast.error('Failed to initialize Google Sign-In');
-    }
-  };
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleCallbackRef = useRef<(response: any) => void>(() => {});
+
   const handleGoogleSignIn = async (response: any) => {
     console.log('Google sign-in response received');
     if (!response || !response.credential) {
@@ -192,6 +107,80 @@ const Register: React.FC = () => {
       setLoading(false);
     }
   };
+
+  googleCallbackRef.current = handleGoogleSignIn;
+
+  useEffect(() => {
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) return;
+
+    setGoogleCredentialHandler((r: unknown) => {
+      void googleCallbackRef.current(r as any);
+    });
+
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    let mountAttempts = 0;
+    const mountButton = () => {
+      if (cancelled) return;
+      const gsi = window.google?.accounts?.id;
+      if (!gsi) return;
+      const host = googleButtonRef.current;
+      if (!host) {
+        mountAttempts += 1;
+        if (mountAttempts < 80) {
+          timers.push(setTimeout(mountButton, 50));
+        }
+        return;
+      }
+      try {
+        const slot = document.createElement('div');
+        host.replaceChildren(slot);
+        ensureGoogleIdentityInitialized(clientId);
+        gsi.renderButton(slot, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'signup_with',
+          locale: 'en',
+        });
+      } catch (e) {
+        console.error('Google Sign-In render error:', e);
+      }
+    };
+
+    let gsiWaitAttempts = 0;
+    const waitForGsiThenMount = () => {
+      if (cancelled) return;
+      if (window.google?.accounts?.id) {
+        timers.push(setTimeout(mountButton, 200));
+        return;
+      }
+      gsiWaitAttempts += 1;
+      if (gsiWaitAttempts > 200) {
+        toast.error(
+          'Google Sign-In did not load. Allow scripts from accounts.google.com, turn off ad blockers for this site, or check your network.'
+        );
+        return;
+      }
+      timers.push(setTimeout(waitForGsiThenMount, 50));
+    };
+    waitForGsiThenMount();
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      clearGoogleCredentialHandler();
+      clearGoogleButtonHost(googleButtonRef.current);
+      try {
+        (window.google?.accounts?.id as { cancel?: () => void } | undefined)?.cancel?.();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     setCompletingRegistration(true);
@@ -218,41 +207,6 @@ const Register: React.FC = () => {
       setCompletingRegistration(false);
     }
   };
-  useEffect(() => {
-    if (window.google && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      const renderButtons = () => {
-        const customerButton = document.getElementById('google-signin-button-customer');
-        const truckerButton = document.getElementById('google-signin-button-trucker');
-        if (customerButton && !customerButton.hasChildNodes()) {
-          try {
-            window.google.accounts?.id.renderButton(customerButton, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signup_with',
-              locale: 'en'
-            });
-          } catch (error) {
-            console.error('Error rendering customer Google button:', error);
-          }
-        }
-        if (truckerButton && !truckerButton.hasChildNodes()) {
-          try {
-            window.google.accounts?.id.renderButton(truckerButton, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signup_with',
-              locale: 'en'
-            });
-          } catch (error) {
-            console.error('Error rendering trucker Google button:', error);
-          }
-        }
-      };
-      setTimeout(renderButtons, 100);
-    }
-  }, [activeTab]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -300,7 +254,7 @@ const Register: React.FC = () => {
                 onSelect={(k) => setActiveTab(k || 'customer')}
                 className="mb-4"
               >
-                <Tab eventKey="customer" title="I'm a Customer">
+                <Tab eventKey="customer" title="I'm a Customer" unmountOnExit={false}>
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
                       <Form.Label>Full Name</Form.Label>
@@ -357,22 +311,8 @@ const Register: React.FC = () => {
                       {loading ? 'Registering...' : 'Register'}
                     </Button>
                   </Form>
-                  <div className="text-center my-3">
-                    <div className="position-relative">
-                      <hr />
-                      <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted">
-                        OR
-                      </span>
-                    </div>
-                  </div>
-                  <div id="google-signin-button-customer" className="mb-3"></div>
-                  {!process.env.REACT_APP_GOOGLE_CLIENT_ID && (
-                    <p className="text-muted small text-center">
-                      Google sign-in is not configured
-                    </p>
-                  )}
                 </Tab>
-                <Tab eventKey="trucker" title="I'm a Trucker">
+                <Tab eventKey="trucker" title="I'm a Trucker" unmountOnExit={false}>
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
                       <Form.Label>Full Name</Form.Label>
@@ -438,6 +378,10 @@ const Register: React.FC = () => {
                       {loading ? 'Registering...' : 'Register'}
                     </Button>
                   </Form>
+                </Tab>
+              </Tabs>
+              {process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim() ? (
+                <>
                   <div className="text-center my-3">
                     <div className="position-relative">
                       <hr />
@@ -446,14 +390,23 @@ const Register: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <div id="google-signin-button-trucker" className="mb-3"></div>
-                  {!process.env.REACT_APP_GOOGLE_CLIENT_ID && (
-                    <p className="text-muted small text-center">
-                      Google sign-in is not configured
-                    </p>
-                  )}
-                </Tab>
-              </Tabs>
+                  <div ref={googleButtonRef} className="mb-2" />
+                </>
+              ) : (
+                <>
+                  <div className="text-center my-3">
+                    <div className="position-relative">
+                      <hr />
+                      <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted">
+                        OR
+                      </span>
+                    </div>
+                  </div>
+                  <Button variant="outline-secondary" className="w-100 mb-2" disabled>
+                    Sign up with Google
+                  </Button>
+                </>
+              )}
             </Card.Body>
           </Card>
         </Col>
