@@ -175,6 +175,7 @@ const Login: React.FC = () => {
 
     let cancelled = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
+    let buttonHost: HTMLElement | null = null;
 
     let mountAttempts = 0;
     const mountButton = () => {
@@ -189,6 +190,7 @@ const Login: React.FC = () => {
         }
         return;
       }
+      buttonHost = host;
       try {
         const slot = document.createElement('div');
         host.replaceChildren(slot);
@@ -227,7 +229,7 @@ const Login: React.FC = () => {
       cancelled = true;
       timers.forEach(clearTimeout);
       clearGoogleCredentialHandler();
-      clearGoogleButtonHost(googleButtonRef.current);
+      clearGoogleButtonHost(buttonHost);
       try {
         (window.google?.accounts?.id as { cancel?: () => void } | undefined)?.cancel?.();
       } catch {
