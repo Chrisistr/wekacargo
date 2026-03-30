@@ -80,8 +80,8 @@
 .sidebar-toggle {
   display: none;
   position: fixed;
-  top: 15px;
-  left: 15px;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
   z-index: 1100;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
@@ -122,5 +122,56 @@
 
   .sidebar-toggle {
     display: block;
+  }
+}
+
+/* ---- Page shell: use with <Sidebar /> on dashboard pages ---- */
+.sidebar-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+  overflow-x: clip;
+}
+
+.sidebar-main {
+  margin-left: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 3.75rem 1rem 1.25rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+.sidebar-main .container-fluid,
+.sidebar-main .container {
+  max-width: 100%;
+}
+
+@media (min-width: 769px) {
+  .sidebar-main {
+    margin-left: 250px;
+    padding: 1.25rem 1.25rem 1.5rem;
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+
+  .sidebar-main.sidebar-main--flush {
+    margin-left: 0;
+  }
+}
+
+/* Mobile: no hamburger (e.g. admin settings without nav) */
+.sidebar-main.sidebar-main--flush {
+  padding-top: 1.25rem;
+  padding-top: max(1.25rem, env(safe-area-inset-top));
+}
+
+@media (max-width: 768px) {
+  .sidebar-main.sidebar-main--flush {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 }

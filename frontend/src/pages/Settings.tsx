@@ -114,10 +114,11 @@ const Settings: React.FC = () => {
       </Container>
     );
   }
+  const withSideNav = user?.role === 'customer' || user?.role === 'trucker';
   return (
-    <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
-      {(user?.role === 'customer' || user?.role === 'trucker') && <Sidebar />}
-      <div style={{ marginLeft: (user?.role === 'customer' || user?.role === 'trucker') ? '250px' : '0', padding: '20px' }}>
+    <div className="sidebar-page">
+      {withSideNav && <Sidebar />}
+      <div className={withSideNav ? 'sidebar-main' : 'sidebar-main sidebar-main--flush'}>
         <Container className="py-5" style={{ maxWidth: '100%' }}>
         <Row className="mb-4">
           <Col>

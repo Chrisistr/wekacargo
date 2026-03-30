@@ -59,9 +59,9 @@ const AdminDashboard: React.FC = () => {
     fetchAlerts();
   }, [user, navigate, fetchStats, fetchAlerts]);
   return (
-    <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
+    <div className="sidebar-page">
       <Sidebar />
-      <div style={{ marginLeft: '250px', padding: '20px' }}>
+      <div className="sidebar-main">
         <Container className="my-5" style={{ maxWidth: '100%' }}>
           <Row>
             <Col>

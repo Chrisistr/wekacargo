@@ -107,9 +107,9 @@ const AdminUserManagement: React.FC = () => {
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
   return (
-    <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
+    <div className="sidebar-page">
       <Sidebar />
-      <div style={{ marginLeft: '250px', padding: '20px' }}>
+      <div className="sidebar-main">
         <Container className="py-5" style={{ maxWidth: '100%' }}>
           <Row className="mb-4">
             <Col>
@@ -153,7 +153,8 @@ const AdminUserManagement: React.FC = () => {
               ) : (
                 <Tabs defaultActiveKey="truckers" className="mb-3">
                   <Tab eventKey="truckers" title={`Truckers (${users.filter(u => u.role === 'trucker').length})`}>
-                    <Table striped bordered hover>
+                    <div className="table-responsive">
+                    <Table striped bordered hover className="mb-0">
                       <thead>
                         <tr>
                           <th>Name</th>
@@ -221,9 +222,11 @@ const AdminUserManagement: React.FC = () => {
                         )}
                       </tbody>
                     </Table>
+                    </div>
                   </Tab>
                   <Tab eventKey="customers" title={`Customers (${users.filter(u => u.role === 'customer').length})`}>
-                    <Table striped bordered hover>
+                    <div className="table-responsive">
+                    <Table striped bordered hover className="mb-0">
                       <thead>
                         <tr>
                           <th>Name</th>
@@ -291,6 +294,7 @@ const AdminUserManagement: React.FC = () => {
                         )}
                       </tbody>
                     </Table>
+                    </div>
                   </Tab>
                 </Tabs>
               )}

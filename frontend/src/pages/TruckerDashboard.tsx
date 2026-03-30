@@ -173,11 +173,9 @@ const TruckerDashboard: React.FC = () => {
   );
 
   return (
-    <div style={{ background: 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)', minHeight: '100vh' }}>
+    <div className="sidebar-page">
       <Sidebar />
-
-      {/* ✅ Responsive margin: 250px on desktop, 0 on mobile */}
-      <div style={{ marginLeft: isMobile ? '0' : '250px', padding: isMobile ? '60px 15px 20px' : '20px' }}>
+      <div className="sidebar-main">
         <Container className="py-3" style={{ maxWidth: '100%' }}>
           <Row>
             <Col xs={12} lg={9}>
