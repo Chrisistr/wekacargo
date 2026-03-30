@@ -1,7 +1,3 @@
-/**
- * Google Identity Services + React: initialize once per app (avoids Strict Mode double-init)
- * and route credentials through a handler set by the active page.
- */
 declare global {
   interface Window {
     __wekaGsiInitialized?: boolean;
@@ -38,7 +34,6 @@ export function ensureGoogleIdentityInitialized(clientId: string): boolean {
   return true;
 }
 
-/** Clear only the host; does not reset global GSI init (safe across route changes). */
 export function clearGoogleButtonHost(host: HTMLElement | null) {
   if (!host) return;
   try {

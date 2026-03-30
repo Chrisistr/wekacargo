@@ -1,8 +1,3 @@
-/**
- * Only proxy /api to the Node backend. The simple "proxy" field in package.json
- * forwards *everything* (including /favicon.ico) and is easy to get wrong.
- * Port must match backend/.env PORT (default 5001).
- */
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function setupProxy(app) {

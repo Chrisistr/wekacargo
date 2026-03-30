@@ -958,13 +958,7 @@ const BookingDetails: React.FC = () => {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => {
-                    const files = (e.target as HTMLInputElement).files;
-                    if (files && files.length > 0) {
-                      // Handle file uploads here if needed
-                      // For now, this is just a placeholder
-                    }
-                  }}
+                  onChange={() => {}}
                 />
               </Form.Group>
               <Form.Group className="mb-3">

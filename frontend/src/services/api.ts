@@ -72,9 +72,7 @@ api.interceptors.response.use(
       }
       if (status === 500) {
         const payUrl = error.config?.url || '';
-        if (payUrl.includes('/payments/initiate')) {
-          /* BookingDetails shows a specific toast */
-        } else {
+        if (!payUrl.includes('/payments/initiate')) {
           toast.error('Server error. Please try again later.');
         }
       }

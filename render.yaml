@@ -1,5 +1,3 @@
-# Render Blueprint: https://render.com/docs/blueprint-spec
-# After first deploy, set env vars in the Render dashboard (secrets are not committed).
 services:
   - type: web
     name: wekacargo-api
@@ -12,7 +10,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Required by server.js — Render does not read repo .env files.
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_URI

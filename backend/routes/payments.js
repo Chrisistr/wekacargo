@@ -6,7 +6,6 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const { auth } = require('../middleware/auth');
 
-/** Daraja STK rejects localhost/http (error 400.002.02). Never default to localhost — that still hits Safaricom and fails. */
 function resolveMpesaCallbackUrl() {
   const explicit = (process.env.MPESA_CALLBACK_URL || '').trim().replace(/\s+/g, '');
   if (explicit) {
@@ -73,7 +72,6 @@ function validateMpesaCallbackUrl(urlString) {
   return { ok: true, url: urlString };
 }
 
-/** yyyyMMddHHmmss in Africa/Nairobi — required for valid STK Password with Daraja. */
 function mpesaTimestampNairobi() {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Africa/Nairobi',
@@ -104,18 +102,7 @@ const getAccessToken = async () => {
     if (!cleanConsumerSecret || cleanConsumerSecret.length < 10) {
       throw new Error('Consumer Secret appears to be invalid (too short or empty)');
     }
-    console.log('M-Pesa Credentials Check:');
-    console.log('  Consumer Key length:', cleanConsumerKey.length);
-    console.log('  Consumer Key preview:', cleanConsumerKey.substring(0, 8) + '...' + cleanConsumerKey.substring(cleanConsumerKey.length - 4));
-    console.log('  Consumer Secret length:', cleanConsumerSecret.length);
-    console.log('  Consumer Secret preview:', cleanConsumerSecret.substring(0, 8) + '...' + cleanConsumerSecret.substring(cleanConsumerSecret.length - 4));
-    console.log('  Has whitespace issues:', consumerKey !== cleanConsumerKey || consumerSecret !== cleanConsumerSecret);
-    console.log('  Original Consumer Key length:', consumerKey.length);
-    console.log('  Original Consumer Secret length:', consumerSecret.length);
     const auth = Buffer.from(`${cleanConsumerKey}:${cleanConsumerSecret}`).toString('base64');
-    console.log('Getting M-Pesa access token from: https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials');
-    console.log('Auth header length:', auth.length);
-    console.log('Auth header preview:', auth.substring(0, 20) + '...');
     const response = await axios.get(
       'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
       {
@@ -129,24 +116,15 @@ const getAccessToken = async () => {
     if (!response.data || !response.data.access_token) {
       throw new Error('Failed to get access token from M-Pesa. Check your Consumer Key and Secret.');
     }
-    console.log('✓ M-Pesa access token obtained successfully');
     return response.data.access_token;
   } catch (error) {
-    console.error('Failed to get access token:', error);
     if (error.response) {
-      console.error('M-Pesa OAuth Error Response:', JSON.stringify(error.response.data, null, 2));
-      console.error('M-Pesa OAuth Error Status:', error.response.status);
+      console.error('M-Pesa OAuth failed:', error.response.status, error.response.data);
       const errorData = error.response.data;
       const errorMessage = errorData?.error_description || errorData?.error || errorData?.errorMessage || 'Invalid credentials';
       if (errorMessage.toLowerCase().includes('wrong credentials') || 
           errorMessage.toLowerCase().includes('invalid') ||
           errorData?.errorCode === '500.001.1001') {
-        console.error('⚠️ CREDENTIALS ERROR DETECTED');
-        console.error('   This usually means:');
-        console.error('   1. Consumer Key or Secret is incorrect');
-        console.error('   2. Credentials don\'t match your Daraja app');
-        console.error('   3. Credentials are for production but using sandbox (or vice versa)');
-        console.error('   4. Credentials have been regenerated in Daraja dashboard');
         throw new Error(`M-Pesa authentication failed: ${errorMessage}. Please verify your Consumer Key and Consumer Secret in the Daraja dashboard (https://developer.safaricom.co.ke/)`);
       }
       throw new Error(`M-Pesa authentication failed: ${errorMessage}`);
@@ -230,15 +208,6 @@ router.post('/initiate', auth, async (req, res) => {
     }
     const passwordString = `${shortcode}${passkey}${timestamp}`;
     const password = Buffer.from(passwordString).toString('base64');
-    console.log('Password Generation Details:');
-    console.log('  Shortcode:', shortcode, '(type:', typeof shortcode + ')');
-    console.log('  Passkey length:', passkey.length);
-    console.log('  Passkey preview:', passkey.substring(0, 8) + '...' + passkey.substring(passkey.length - 4));
-    console.log('  Timestamp:', timestamp);
-    console.log('  Password string (first 50 chars):', passwordString.substring(0, 50) + '...');
-    console.log('  Password (base64) length:', password.length);
-    console.log('  Has all components:', !!(shortcode && passkey && timestamp));
-    console.log('  ⚠️ IMPORTANT: Shortcode and Passkey must match the same app/shortcode in Daraja dashboard!');
     const callbackURL = resolveMpesaCallbackUrl();
     const callbackCheck = validateMpesaCallbackUrl(callbackURL);
     if (!callbackCheck.ok) {
@@ -249,21 +218,11 @@ router.post('/initiate', auth, async (req, res) => {
       });
     }
     const cleanCallbackURL = callbackCheck.url.trim().replace(/\s+/g, '');
-    console.log('Payment Details:', {
-      amount,
-      originalPhoneNumber: phoneNumber,
-      formattedPhoneNumber: formattedPhone,
-      shortcode,
-      timestamp,
-      callbackURL: cleanCallbackURL,
-      hasPasskey: !!passkey
-    });
     let accessToken;
     try {
       accessToken = await getAccessToken();
-      console.log('✓ Access token obtained successfully');
     } catch (tokenError) {
-      console.error('✗ Failed to get access token:', tokenError.message);
+      console.error('M-Pesa token error:', tokenError.message);
       return res.status(500).json({ 
         message: 'Failed to authenticate with M-Pesa. Please check your Consumer Key and Consumer Secret.',
         error: tokenError.message
@@ -283,19 +242,6 @@ router.post('/initiate', auth, async (req, res) => {
       AccountReference: bookingId.toString(),
       TransactionDesc: 'WekaCargo Booking Payment'
     };
-    console.log('=== STK Push Request Details ===');
-    console.log('Business ShortCode:', businessShortCode);
-    console.log('Transaction Type: CustomerPayBillOnline');
-    console.log('Amount:', amount);
-    console.log('Customer Phone:', formattedPhone);
-    console.log('Callback URL:', cleanCallbackURL);
-    console.log('STK Push Payload:', JSON.stringify(stkPushPayload, null, 2));
-    console.log('Phone Number Validation:', {
-      original: phoneNumber,
-      formatted: formattedPhone,
-      isValid: /^254\d{9}$/.test(formattedPhone),
-      length: formattedPhone.length
-    });
     const response = await axios.post(
       'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
       stkPushPayload,
@@ -306,12 +252,9 @@ router.post('/initiate', auth, async (req, res) => {
         }
       }
     );
-    console.log('M-Pesa STK Push Response:', JSON.stringify(response.data, null, 2));
     if (response.data.ResponseCode !== '0') {
       const errorMessage = response.data.CustomerMessage || response.data.errorMessage || 'STK Push failed';
-      console.error('STK Push failed:', errorMessage);
-      console.error('Response Code:', response.data.ResponseCode);
-      console.error('Full Response:', JSON.stringify(response.data, null, 2));
+      console.error('STK Push failed:', response.data.ResponseCode, errorMessage);
       let userFriendlyMessage = errorMessage;
       if (response.data.ResponseCode === '1032' || response.data.ResponseCode === '1037') {
         userFriendlyMessage = 'Request cancelled by user or timeout. Please try again.';

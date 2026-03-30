@@ -1,5 +1,4 @@
 import React from 'react';
-// StrictMode disabled: Google Identity Services mutates DOM inside our mount node; double-mount in dev caused removeChild errors.
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
