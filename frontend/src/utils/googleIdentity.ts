@@ -27,6 +27,7 @@ export function ensureGoogleIdentityInitialized(clientId: string): boolean {
       callback: (response: unknown) => {
         window.__wekaGoogleCredentialHandler?.(response);
       },
+      use_fedcm_for_prompt: false,
     });
     window.__wekaGsiInitialized = true;
     window.__wekaGsiClientId = clientId;

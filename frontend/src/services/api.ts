@@ -6,6 +6,7 @@ import { resolveApiBaseURL, warnIfHtmlInsteadOfJson } from './apiBaseUrl';
 
 const api: AxiosInstance = axios.create({
   baseURL: resolveApiBaseURL(),
+  timeout: 90000,
   headers: {
     'Content-Type': 'application/json',
   },

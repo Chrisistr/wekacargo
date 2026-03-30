@@ -5,9 +5,10 @@ const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const googleClientId = (process.env.GOOGLE_CLIENT_ID || '').trim().replace(/\s+/g, '');
 let client = null;
-if (process.env.GOOGLE_CLIENT_ID) {
-  client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+if (googleClientId) {
+  client = new OAuth2Client(googleClientId);
 } else {
   console.warn('GOOGLE_CLIENT_ID is not configured. Google login will not work.');
 }
@@ -232,7 +233,7 @@ router.post('/admin/login',
 );
 router.post('/google', async (req, res) => {
   try {
-    if (!client || !process.env.GOOGLE_CLIENT_ID) {
+    if (!client || !googleClientId) {
       return res.status(503).json({ message: 'Google login is not configured on the server' });
     }
     const { credential } = req.body;
@@ -241,7 +242,7 @@ router.post('/google', async (req, res) => {
     }
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: googleClientId,
     });
     const payload = ticket.getPayload();
     const { name, picture, sub: googleId } = payload;
@@ -299,10 +300,16 @@ router.post('/google', async (req, res) => {
     });
   } catch (error) {
     console.error('Google login error:', error);
-    const msg =
-      error && error.message && String(error.message).includes('Token used too late')
-        ? 'Google sign-in expired. Please try again.'
-        : 'Server error during Google login';
+    const em = String(error?.message || '');
+    let msg = 'Server error during Google login';
+    if (em.includes('Token used too late')) {
+      msg = 'Google sign-in expired. Please try again.';
+    } else if (
+      /audience|wrong number of segments|invalid token|signature/i.test(em)
+    ) {
+      msg =
+        'Google client ID mismatch: set GOOGLE_CLIENT_ID on Render to the exact same Web client ID as REACT_APP_GOOGLE_CLIENT_ID on Netlify (no spaces).';
+    }
     res.status(500).json({ message: msg });
   }
 });

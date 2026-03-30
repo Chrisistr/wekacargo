@@ -3,10 +3,19 @@ import { toast } from 'react-toastify';
 export function resolveApiBaseURL(): string {
   const raw = process.env.REACT_APP_API_URL;
   const trimmed = typeof raw === 'string' ? raw.trim() : '';
-  if (trimmed !== '') {
-    return trimmed.replace(/\/+$/, '');
+  if (trimmed === '') {
+    return '/api';
   }
-  return '/api';
+  let base = trimmed.replace(/\/+$/, '');
+  try {
+    const u = new URL(base);
+    if (!u.pathname || u.pathname === '/') {
+      base = `${base}/api`;
+    }
+  } catch {
+    /* invalid URL — leave as-is */
+  }
+  return base.replace(/\/+$/, '');
 }
 
 let warnedSpaApiMisconfig = false;

@@ -29,10 +29,24 @@ import AdminReviewsManagement from './pages/AdminReviewsManagement';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from './store';
 import { authAPI } from './services/api';
+import { resolveApiBaseURL } from './services/apiBaseUrl';
 import { setUser, logout, SESSION_TIMEOUT_MS, INACTIVITY_TIMEOUT_MS } from './store/authSlice';
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { user, token } = useSelector((state: RootState) => state.auth);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') return;
+    const base = resolveApiBaseURL();
+    if (base !== '/api') return;
+    const h = window.location.hostname;
+    if (!h.includes('netlify.app') && !h.includes('netlify.com')) return;
+    if (sessionStorage.getItem('weka_netlify_api_warn')) return;
+    sessionStorage.setItem('weka_netlify_api_warn', '1');
+    toast.error(
+      'API URL is not set for production. In Netlify → Environment variables add REACT_APP_API_URL = https://YOUR-SERVICE.onrender.com/api (or bare https://YOUR-SERVICE.onrender.com), then redeploy. Google and M-Pesa need this.',
+      { autoClose: 25000 }
+    );
+  }, []);
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
