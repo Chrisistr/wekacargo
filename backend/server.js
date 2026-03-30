@@ -34,15 +34,35 @@ if (process.env.NODE_ENV === 'production') {
 }
 const app = express();
 app.set('trust proxy', 1);
+
+function parseCorsOriginsEnv() {
+  const raw = (process.env.CORS_ORIGINS || '').trim();
+  if (!raw) return [];
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+function isHttpsNetlifyOrigin(origin) {
+  if (!origin || !origin.startsWith('https://')) return false;
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    return host.endsWith('.netlify.app');
+  } catch {
+    return false;
+  }
+}
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://wekacargo.netlify.app',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  ...parseCorsOriginsEnv(),
 ].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else if (process.env.NODE_ENV === 'production' && isHttpsNetlifyOrigin(origin)) {
       callback(null, true);
     } else if (process.env.NODE_ENV !== 'production') {
       callback(null, true);

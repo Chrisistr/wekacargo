@@ -11,6 +11,10 @@ function resolveMpesaCallbackUrl() {
   if (explicit) {
     return explicit.replace(/\/+$/, '');
   }
+  const renderBase = (process.env.RENDER_EXTERNAL_URL || '').trim().replace(/\s+/g, '').replace(/\/+$/, '');
+  if (renderBase) {
+    return `${renderBase}/api/payments/callback`;
+  }
   const base = (process.env.BACKEND_URL || '').trim().replace(/\/+$/, '');
   if (!base) return '';
   try {
@@ -264,7 +268,7 @@ router.post('/initiate', auth, async (req, res) => {
         userFriendlyMessage = 'Invalid phone number or amount. Please check and try again.';
       } else if (response.data.ResponseCode === '400.002.02') {
         userFriendlyMessage =
-          'Invalid CallBackURL (must be public HTTPS). Set MPESA_CALLBACK_URL in backend/.env — use ngrok for local dev.';
+          'Invalid CallBackURL (must be public HTTPS). On Render, set MPESA_CALLBACK_URL to https://YOUR-SERVICE.onrender.com/api/payments/callback (or rely on RENDER_EXTERNAL_URL). For local dev use ngrok.';
       }
       return res.status(400).json({ 
         message: userFriendlyMessage,
@@ -313,7 +317,7 @@ router.post('/initiate', auth, async (req, res) => {
         'M-Pesa API error';
       if (data?.errorCode === '400.002.02' || String(errorMessage).includes('Invalid CallBackURL')) {
         errorMessage =
-          'Invalid M-Pesa CallBackURL. Set MPESA_CALLBACK_URL in backend/.env to a public HTTPS URL, e.g. https://xxxx.ngrok-free.app/api/payments/callback (run: ngrok http <backend port>).';
+          'Invalid M-Pesa CallBackURL. Production: https://YOUR-API.onrender.com/api/payments/callback. Local: ngrok URL. Set MPESA_CALLBACK_URL on the server if the auto URL is wrong.';
       }
       const reqUrl = error.config?.url || '';
       if (
